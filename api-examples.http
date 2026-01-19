@@ -1,0 +1,213 @@
+# API Examples for Reputation Gateway
+# Use with REST Client extension in VS Code or similar tools
+
+@baseUrl = http://localhost:3000
+
+### 1. Initialize Database (Development only)
+GET {{baseUrl}}/api/init-db
+
+### 2. Create Project - Standard Filter
+POST {{baseUrl}}/api/projects/create
+Content-Type: application/json
+
+{
+  "name": "DeFi Protocol Beta",
+  "slug": "defi-protocol",
+  "criteria": {
+    "minScore": 1400,
+    "minVouches": 1,
+    "positiveReviews": true,
+    "minAccountAge": 7
+  },
+  "manual_review": true,
+  "destination_url": "https://discord.gg/defi-protocol",
+  "destination_type": "discord"
+}
+
+### 3. Create Project - Strict Filter
+POST {{baseUrl}}/api/projects/create
+Content-Type: application/json
+
+{
+  "name": "NFT Marketplace Beta",
+  "slug": "nft-marketplace",
+  "criteria": {
+    "minScore": 1600,
+    "minVouches": 2,
+    "positiveReviews": true,
+    "minAccountAge": 30
+  },
+  "manual_review": false,
+  "destination_url": "https://beta.nftmarketplace.com",
+  "destination_type": "beta"
+}
+
+### 4. Create Project - Basic Filter
+POST {{baseUrl}}/api/projects/create
+Content-Type: application/json
+
+{
+  "name": "Web3 Social App",
+  "slug": "web3-social",
+  "criteria": {
+    "minScore": 1200,
+    "minVouches": 0,
+    "positiveReviews": false,
+    "minAccountAge": 0
+  },
+  "manual_review": false,
+  "destination_url": "https://discord.gg/web3-social",
+  "destination_type": "discord"
+}
+
+### 5. Get Project Info
+GET {{baseUrl}}/api/projects/defi-protocol
+
+### 6. Apply - High Quality Profile (Should be Accepted)
+POST {{baseUrl}}/api/apply
+Content-Type: application/json
+
+{
+  "project_slug": "defi-protocol",
+  "ethos_profile": {
+    "profileId": 12345,
+    "username": "alice.eth",
+    "score": 1650,
+    "vouches": 3,
+    "positiveReviews": 15,
+    "negativeReviews": 2,
+    "accountAge": 45
+  }
+}
+
+### 7. Apply - Low Score (Should be Rejected)
+POST {{baseUrl}}/api/apply
+Content-Type: application/json
+
+{
+  "project_slug": "defi-protocol",
+  "ethos_profile": {
+    "profileId": 23456,
+    "username": "bob_dev",
+    "score": 1180,
+    "vouches": 0,
+    "positiveReviews": 5,
+    "negativeReviews": 1,
+    "accountAge": 3
+  }
+}
+
+### 8. Apply - Meets Criteria (Pending if manual review enabled)
+POST {{baseUrl}}/api/apply
+Content-Type: application/json
+
+{
+  "project_slug": "defi-protocol",
+  "ethos_profile": {
+    "profileId": 34567,
+    "username": "charlie.crypto",
+    "score": 1420,
+    "vouches": 1,
+    "positiveReviews": 8,
+    "negativeReviews": 2,
+    "accountAge": 15
+  }
+}
+
+### 9. Apply - Negative Review Balance (Should be Rejected)
+POST {{baseUrl}}/api/apply
+Content-Type: application/json
+
+{
+  "project_slug": "defi-protocol",
+  "ethos_profile": {
+    "profileId": 45678,
+    "username": "diana_web3",
+    "score": 1500,
+    "vouches": 2,
+    "positiveReviews": 3,
+    "negativeReviews": 5,
+    "accountAge": 20
+  }
+}
+
+### 10. Apply to Basic Filter Project (Should be Accepted)
+POST {{baseUrl}}/api/apply
+Content-Type: application/json
+
+{
+  "project_slug": "web3-social",
+  "ethos_profile": {
+    "profileId": 56789,
+    "username": "eve_crypto",
+    "score": 1250,
+    "vouches": 0,
+    "positiveReviews": 2,
+    "negativeReviews": 3,
+    "accountAge": 1
+  }
+}
+
+### 11. Try to Apply Again (Should get conflict error)
+POST {{baseUrl}}/api/apply
+Content-Type: application/json
+
+{
+  "project_slug": "defi-protocol",
+  "ethos_profile": {
+    "profileId": 12345,
+    "username": "alice.eth",
+    "score": 1650,
+    "vouches": 3,
+    "positiveReviews": 15,
+    "negativeReviews": 2,
+    "accountAge": 45
+  }
+}
+
+### 12. Create Project with Invalid Slug (Should fail)
+POST {{baseUrl}}/api/projects/create
+Content-Type: application/json
+
+{
+  "name": "Test Project",
+  "slug": "Invalid Slug With Spaces",
+  "criteria": {
+    "minScore": 1400,
+    "minVouches": 1,
+    "positiveReviews": true,
+    "minAccountAge": 7
+  },
+  "manual_review": false,
+  "destination_url": "https://example.com",
+  "destination_type": "discord"
+}
+
+### 13. Create Project with Invalid URL (Should fail)
+POST {{baseUrl}}/api/projects/create
+Content-Type: application/json
+
+{
+  "name": "Test Project",
+  "slug": "test-project",
+  "criteria": {
+    "minScore": 1400,
+    "minVouches": 1,
+    "positiveReviews": true,
+    "minAccountAge": 7
+  },
+  "manual_review": false,
+  "destination_url": "http://example.com",
+  "destination_type": "discord"
+}
+
+### 14. Get Non-existent Project (Should return 404)
+GET {{baseUrl}}/api/projects/non-existent-project
+
+### 15. Apply with Missing Fields (Should fail)
+POST {{baseUrl}}/api/apply
+Content-Type: application/json
+
+{
+  "project_slug": "defi-protocol"
+}
