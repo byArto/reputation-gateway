@@ -3,8 +3,13 @@
 import { useState } from "react"
 import { Shield, ShieldCheck, ShieldAlert, ChevronDown, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
+import type { FilterPreset } from "@/lib/filters"
 
-type PresetType = "basic" | "standard" | "strict" | null
+type PresetType = FilterPreset | null
+
+interface FilterCardsProps {
+  onContinue: (filter: FilterPreset) => void
+}
 
 interface CustomSettings {
   minScore: number
@@ -42,7 +47,7 @@ const presets = [
   },
 ]
 
-export default function FilterCards() {
+export default function FilterCards({ onContinue }: FilterCardsProps) {
   const [selectedPreset, setSelectedPreset] = useState<PresetType>("standard")
   const [customExpanded, setCustomExpanded] = useState(false)
   const [customSettings, setCustomSettings] = useState<CustomSettings>({
@@ -301,7 +306,11 @@ export default function FilterCards() {
 
         {/* Continue Button */}
         <div className="flex justify-center">
-          <button className="bg-[#1E3A5F] text-white font-sans font-medium px-12 py-4 rounded-lg hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200">
+          <button
+            onClick={() => selectedPreset && onContinue(selectedPreset)}
+            disabled={!selectedPreset}
+            className="bg-[#1E3A5F] text-white font-sans font-medium px-12 py-4 rounded-lg hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             Continue
           </button>
         </div>

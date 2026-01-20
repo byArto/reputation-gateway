@@ -83,12 +83,14 @@ export default function ResultNotEligible({
         </div>
 
         {/* Learn More Button */}
-        <button
-          type="button"
-          className="w-full border-2 border-[#1E3A5F] text-[#1E3A5F] bg-transparent py-[18px] rounded-xl font-sans text-base font-medium transition-colors hover:bg-[rgba(30,58,95,0.05)] mb-6"
+        <a
+          href="https://ethos.network"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full border-2 border-[#1E3A5F] text-[#1E3A5F] bg-transparent py-[18px] rounded-xl font-sans text-base font-medium transition-colors hover:bg-[rgba(30,58,95,0.05)] mb-6 text-center"
         >
           Learn About Ethos Network
-        </button>
+        </a>
 
         {/* Reapply Note */}
         <div className="flex items-center justify-center gap-2">

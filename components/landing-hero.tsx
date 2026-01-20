@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { ShieldCheck } from "lucide-react"
 
 const stats = [
@@ -9,6 +10,8 @@ const stats = [
 ]
 
 export default function LandingHero() {
+  const router = useRouter()
+
   return (
     <section className="min-h-screen flex items-center justify-center bg-[#EFE9DF] px-4 py-16">
       <div className="max-w-4xl mx-auto text-center flex flex-col items-center gap-8">
@@ -33,11 +36,13 @@ export default function LandingHero() {
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row items-center gap-4">
           <button
+            onClick={() => router.push("/create")}
             className="px-9 py-4 bg-[#1E3A5F] text-white font-sans font-medium rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
           >
             Create Access Page
           </button>
           <button
+            onClick={() => router.push("/test-project")}
             className="px-9 py-4 bg-transparent border border-[#1E3A5F] text-[#1E3A5F] font-sans font-medium rounded-lg hover:bg-[#1E3A5F]/5 transition-all duration-200"
           >
             View Demo

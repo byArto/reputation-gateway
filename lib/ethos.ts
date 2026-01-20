@@ -154,6 +154,52 @@ export async function exchangeEthosCode(
 }
 
 /**
+ * Get Ethos user profile by Ethos Everywhere wallet address
+ */
+export async function getEthosUserByWalletAddress(
+  walletAddress: string,
+  clientName: string = 'reputation-gateway'
+): Promise<EthosUser | null> {
+  try {
+    const response = await fetch(
+      `${ETHOS_API_BASE_URL}/users/by/ethos-everywhere-wallet/${walletAddress}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Ethos-Client': clientName,
+        },
+        next: { revalidate: 300 }, // Cache 5 minutes
+      }
+    )
+
+    if (!response.ok) {
+      console.error(`Ethos API error: ${response.status} ${response.statusText}`)
+      return null
+    }
+
+    const data: EthosUserResponse = await response.json()
+
+    if (!data.success || !data.data) {
+      return null
+    }
+
+    return {
+      profileId: data.data.id,
+      primaryAddress: data.data.primaryAddress,
+      username: data.data.username || `user_${data.data.id}`,
+      score: data.data.score,
+      positiveReviews: data.data.positiveReviewCount,
+      negativeReviews: data.data.negativeReviewCount,
+      vouches: data.data.receivedVouchCount,
+      accountCreatedAt: data.data.createdAt,
+    }
+  } catch (error) {
+    console.error('Error fetching Ethos user by wallet:', error)
+    return null
+  }
+}
+
+/**
  * Helper function to convert Ethos user to application profile format
  */
 export function ethosUserToApplicationProfile(user: EthosUser) {

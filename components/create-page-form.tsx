@@ -2,13 +2,17 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { MessageCircle, Globe, ArrowRight } from "lucide-react"
+import { MessageCircle, Globe } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { getFilterPreset } from "@/lib/filters"
+import { getFilterPreset, type FilterPreset } from "@/lib/filters"
 
 type DestinationType = "discord" | "beta"
 
-export default function CreatePageForm() {
+interface CreatePageFormProps {
+  selectedFilter: FilterPreset
+}
+
+export default function CreatePageForm({ selectedFilter }: CreatePageFormProps) {
   const router = useRouter()
   const [projectName, setProjectName] = useState("")
   const [projectSlug, setProjectSlug] = useState("")
@@ -68,8 +72,8 @@ export default function CreatePageForm() {
     }
 
     try {
-      // Get standard filter preset (for now - can be made configurable later)
-      const criteria = getFilterPreset("standard")
+      // Get selected filter preset
+      const criteria = getFilterPreset(selectedFilter)
 
       const response = await fetch("/api/projects/create", {
         method: "POST",
@@ -238,24 +242,6 @@ export default function CreatePageForm() {
           {errors.url && touched.url && (
             <p className="text-[13px] text-red-500 font-sans">{errors.url}</p>
           )}
-        </div>
-
-        {/* Summary Box */}
-        <div className="rounded-lg bg-[#F9F7F4] p-5 border border-[#E5E0D8]">
-          <h3 className="text-[15px] font-semibold text-[#1E3A5F] font-sans">
-            Selected Filter: Standard
-          </h3>
-          <p className="mt-1.5 text-[13px] text-[#5C5C5C] font-sans">
-            Score ≥ 1400, 1+ vouches, Positive reviews, 7+ days
-          </p>
-          <button
-            type="button"
-            className="mt-3 inline-flex items-center gap-1 text-[14px] font-medium text-[#1E3A5F] font-sans hover:underline transition-all"
-            disabled={isSubmitting}
-          >
-            Change filter
-            <ArrowRight className="h-4 w-4" />
-          </button>
         </div>
 
         {/* Submit Button */}

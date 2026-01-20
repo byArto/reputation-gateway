@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { ShieldCheck, Check, Lock } from "lucide-react"
+import { usePrivy, useCrossAppAccounts } from '@privy-io/react-auth'
 
 interface TesterViewProps {
   projectName?: string
@@ -21,76 +22,94 @@ export default function TesterView({
   slug
 }: TesterViewProps) {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const loginSuccess = searchParams.get("login_success")
-  const [isSubmitting, setIsSubmitting] = useState(loginSuccess === "true")
+  const { ready, authenticated, user, login } = usePrivy()
+  const { linkCrossAppAccount } = useCrossAppAccounts()
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Handle OAuth callback and auto-submit application
+  // Автоматически подать заявку после аутентификации
   useEffect(() => {
-    if (loginSuccess === "true" && isSubmitting) {
-      // Submit application
-      fetch("/api/apply", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          projectSlug: slug,
-        }),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          // Get user info to pass score
-          fetch("/api/auth/me")
-            .then((res) => res.json())
-            .then((userData) => {
-              const userScore = userData.user?.score || 1500
+    if (!ready || !authenticated || !user || isSubmitting) return
 
-              if (data.status === "accepted") {
-                // Redirect to success page with destination URL
-                router.push(`/${slug}/result?status=accepted&url=${encodeURIComponent(data.destination_url)}&type=discord&score=${userScore}`)
-              } else {
-                // Redirect to rejection page with reason
-                router.push(`/${slug}/result?status=rejected&reason=${encodeURIComponent(data.rejection_reason || "Requirements not met")}&reapply=${data.can_reapply_at || ""}&score=${userScore}`)
-              }
-            })
-            .catch(() => {
-              // Fallback without score if user info fetch fails
-              if (data.status === "accepted") {
-                router.push(`/${slug}/result?status=accepted&url=${encodeURIComponent(data.destination_url)}&type=discord`)
-              } else {
-                router.push(`/${slug}/result?status=rejected&reason=${encodeURIComponent(data.rejection_reason || "Requirements not met")}&reapply=${data.can_reapply_at || ""}`)
-              }
-            })
-        })
-        .catch((err) => {
-          console.error("Error submitting application:", err)
-          setError("Failed to submit application. Please try again.")
-          setIsSubmitting(false)
-        })
+    const crossAppAccount = user.linkedAccounts?.find(
+      (account) => account.type === 'cross_app'
+    )
+
+    if (!crossAppAccount || !crossAppAccount.embeddedWallets?.[0]?.address) {
+      return
     }
-  }, [loginSuccess, slug, router, isSubmitting])
 
-  const handleCheckAccess = () => {
-    // Redirect to OAuth login with project slug
-    window.location.href = `/api/auth/ethos/login?project_slug=${slug}&redirect_to=/${slug}?login_success=true`
+    const walletAddress = crossAppAccount.embeddedWallets[0].address
+
+    setIsSubmitting(true)
+
+    fetch("/api/auth/privy/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ walletAddress, projectSlug: slug }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.status === "accepted") {
+          router.push(
+            `/${slug}/result?status=accepted&url=${encodeURIComponent(
+              data.destination_url
+            )}&type=discord&score=${data.user_score}`
+          )
+        } else {
+          router.push(
+            `/${slug}/result?status=rejected&reason=${encodeURIComponent(
+              data.rejection_reason || "Requirements not met"
+            )}&reapply=${data.can_reapply_at || ""}&score=${data.user_score}`
+          )
+        }
+      })
+      .catch((err) => {
+        console.error("Error:", err)
+        setError("Failed to submit. Please try again.")
+        setIsSubmitting(false)
+      })
+  }, [ready, authenticated, user, slug, router, isSubmitting])
+
+  const handleCheckAccess = async () => {
+    try {
+      setError(null)
+
+      if (!authenticated) {
+        await login()
+        return
+      }
+
+      const crossAppAccount = user?.linkedAccounts?.find(
+        (account) => account.type === 'cross_app'
+      )
+
+      if (!crossAppAccount) {
+        const ethosProviderAppId = process.env.NEXT_PUBLIC_ETHOS_PROVIDER_APP_ID
+        if (!ethosProviderAppId) {
+          setError("Ethos integration not configured")
+          return
+        }
+
+        await linkCrossAppAccount({ appId: ethosProviderAppId })
+      }
+    } catch (error) {
+      console.error("Auth error:", error)
+      setError("Authentication failed. Please try again.")
+    }
   }
 
   return (
     <main className="min-h-screen bg-[#EFE9DF] flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-[600px] flex flex-col items-center">
-        {/* Project Name */}
         <h1 className="font-serif text-[56px] text-[#1A1A1A] text-center leading-tight">
           {projectName}
         </h1>
 
-        {/* Subtitle */}
         <p className="font-sans text-[18px] text-[#5C5C5C] text-center mb-12">
           Closed Beta Access
         </p>
 
-        {/* Info Box */}
         <div className="w-full bg-white border border-[#E5E0D8] rounded-xl p-5 mb-6">
           <div className="flex items-center gap-3">
             <ShieldCheck className="w-6 h-6 text-[#1E3A5F] flex-shrink-0" />
@@ -100,7 +119,6 @@ export default function TesterView({
           </div>
         </div>
 
-        {/* Requirements Section */}
         <div className="w-full bg-white border border-[#E5E0D8] rounded-xl p-6 mb-6">
           <h2 className="font-sans text-[20px] font-semibold text-[#1A1A1A] mb-4">
             Requirements
@@ -117,23 +135,20 @@ export default function TesterView({
           </div>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="w-full rounded-lg bg-red-50 border border-red-200 p-4 mb-6">
             <p className="text-sm text-red-600 font-sans">{error}</p>
           </div>
         )}
 
-        {/* CTA Button */}
         <button
           onClick={handleCheckAccess}
-          disabled={isSubmitting}
+          disabled={!ready || isSubmitting}
           className="w-full bg-[#1E3A5F] text-white font-sans font-medium text-[18px] py-5 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? "Checking..." : "Check My Access"}
         </button>
 
-        {/* Footer Note */}
         <div className="flex items-center gap-2 mt-6">
           <Lock className="w-4 h-4 text-[#888888]" />
           <p className="font-sans text-[14px] text-[#888888]">
