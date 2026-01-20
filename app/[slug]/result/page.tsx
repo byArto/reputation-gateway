@@ -12,36 +12,42 @@ interface ResultPageProps {
     reason?: string
     reapply?: string
     score?: string
+    required?: string
   }>
 }
 
 export default async function ResultPage({ params, searchParams }: ResultPageProps) {
   await params
-  const { status, url, type, reason, reapply, score } = await searchParams
+  const { status, url, type, reason, reapply, score, required } = await searchParams
+
+  // Validate score parameter
+  const parsedScore = score ? parseInt(score) : null
+  const currentScore = parsedScore && !isNaN(parsedScore) ? parsedScore : 0
+
+  // Validate required score parameter
+  const parsedRequired = required ? parseInt(required) : null
+  const requiredScore = parsedRequired && !isNaN(parsedRequired) ? parsedRequired : 1400
 
   if (status === "accepted" && url) {
     return (
       <ResultEligible
-        score={score ? parseInt(score) : 1500}
+        score={currentScore || 1500}
         destinationUrl={url}
         destinationType={(type as "discord" | "beta") || "discord"}
       />
     )
   }
 
-  // Parse reapply date if provided - use default 30 days from now
-  // For server component, compute once during render
-  const thirtyDaysFromNow = new Date()
-  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
+  // Parse reapply date if provided
   const defaultReapplyTime = reapply
     ? new Date(reapply).getTime()
-    : thirtyDaysFromNow.getTime()
+    : Date.now() + 60 * 1000 // Default 1 minute from now
 
   return (
     <ResultNotEligible
       reason={reason || "Requirements not met"}
-      currentScore={score ? parseInt(score) : 1200}
-      requiredScore={1400}
+      currentScore={currentScore}
+      requiredScore={requiredScore}
       canReapplyAt={defaultReapplyTime}
     />
   )

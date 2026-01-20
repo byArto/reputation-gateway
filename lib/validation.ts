@@ -54,11 +54,11 @@ export function validateCriteria(
 
 /**
  * Calculate when a user can reapply after rejection
- * Returns a date 30 days from now
+ * Returns a date 1 minute from now (for testing)
  */
 export function calculateReapplyDate(): Date {
   const reapplyDate = new Date()
-  reapplyDate.setDate(reapplyDate.getDate() + 30)
+  reapplyDate.setTime(reapplyDate.getTime() + 60 * 1000) // 1 minute
   return reapplyDate
 }
 

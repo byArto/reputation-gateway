@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getEthosUserByWalletAddress, ethosUserToApplicationProfile } from "@/lib/ethos"
 import { createSession } from "@/lib/session"
-import { createApplication, getProjectBySlug } from "@/lib/db"
+import { createApplication, getProjectBySlug, checkExistingApplication } from "@/lib/db"
 import { validateCriteria, calculateReapplyDate } from "@/lib/validation"
 
 /**
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     // Создать сессию
     await createSession({
       profileId: ethosUser.profileId,
-      username: ethosUser.username,
+      username: ethosUser.username || `user_${ethosUser.profileId}`,
       accessToken: `privy_${walletAddress}`,
     })
 
@@ -48,6 +48,60 @@ export async function POST(request: Request) {
     // Конвертировать в формат для валидации
     const ethosProfile = ethosUserToApplicationProfile(ethosUser)
 
+    // Проверить существующую заявку
+    const existingApplication = await checkExistingApplication(
+      project.id,
+      ethosProfile.profileId
+    )
+
+    if (existingApplication) {
+      // Если заявка отклонена, проверить cooldown
+      if (existingApplication.status === "rejected") {
+        const canReapplyTime = existingApplication.can_reapply_at
+          ? new Date(existingApplication.can_reapply_at).getTime()
+          : 0
+        const now = Date.now()
+
+        if (now < canReapplyTime) {
+          return NextResponse.json({
+            error: "Please wait before reapplying",
+            success: false,
+            status: "rejected" as const,
+            rejection_reason: existingApplication.rejection_reason || "Requirements not met",
+            can_reapply_at: new Date(canReapplyTime).toISOString(),
+            user_score: ethosProfile.score,
+            required_score: project.criteria.minScore,
+          }, { status: 429 })
+        }
+
+        // Cooldown истек, можно пересоздать заявку
+        // Продолжаем валидацию ниже
+      } else {
+        // Вернуть существующую заявку (accepted или pending)
+        const response: {
+          success: boolean
+          status: "accepted" | "rejected" | "pending"
+          user_score: number
+          required_score: number
+          destination_url?: string
+          rejection_reason?: string
+          failed_criteria?: string[]
+          can_reapply_at?: string
+        } = {
+          success: existingApplication.status === "accepted",
+          status: existingApplication.status as "accepted" | "pending",
+          user_score: ethosProfile.score,
+          required_score: project.criteria.minScore,
+        }
+
+        if (existingApplication.status === "accepted") {
+          response.destination_url = project.destination_url
+        }
+
+        return NextResponse.json(response)
+      }
+    }
+
     // Валидировать критерии
     const validation = validateCriteria(
       ethosProfile,
@@ -59,7 +113,7 @@ export async function POST(request: Request) {
     const application = await createApplication({
       projectId: project.id,
       ethosProfileId: ethosProfile.profileId,
-      username: ethosProfile.username,
+      username: ethosProfile.username || `user_${ethosProfile.profileId}`,
       score: ethosProfile.score,
       status: validation.status,
       rejectionReason: validation.rejectionReason,
@@ -73,14 +127,16 @@ export async function POST(request: Request) {
       success: boolean
       status: "accepted" | "rejected" | "pending"
       user_score: number
+      required_score: number
       destination_url?: string
       rejection_reason?: string
       failed_criteria?: string[]
       can_reapply_at?: string
     } = {
-      success: validation.status !== "rejected",
-      status: application.status,
+      success: validation.status === "accepted",
+      status: application.status as "accepted" | "rejected" | "pending",
       user_score: ethosProfile.score,
+      required_score: project.criteria.minScore,
     }
 
     if (validation.status === "rejected") {

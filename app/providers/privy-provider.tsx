@@ -23,7 +23,7 @@ export default function PrivyProvider({ children }: PrivyProviderProps) {
         },
         externalWallets: {
           coinbaseWallet: false,
-          metamask: false,
+          metamask: true,
           rainbow: false,
         },
       }}

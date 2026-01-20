@@ -1,9 +1,11 @@
+// lib/ethos.ts
 /**
  * Ethos Network API Client
  * Documentation: https://docs.ethos.network
  */
 
 const ETHOS_API_BASE_URL = "https://api.ethos.network/api/v2"
+const ETHOS_CLIENT_NAME = "reputation-gateway"
 
 export interface EthosUser {
   profileId: number
@@ -13,7 +15,8 @@ export interface EthosUser {
   positiveReviews: number
   negativeReviews: number
   vouches: number
-  accountCreatedAt: string // ISO date string
+  accountCreatedAt: string
+  hasSlashProtection?: boolean
 }
 
 export interface EthosUserResponse {
@@ -27,6 +30,156 @@ export interface EthosUserResponse {
     negativeReviewCount: number
     receivedVouchCount: number
     createdAt: string
+    slashed?: boolean
+  }
+}
+
+/**
+ * Get Ethos user score by wallet address
+ * Uses /score/address endpoint
+ */
+async function getScoreByAddress(walletAddress: string): Promise<{ score: number; level: string } | null> {
+  try {
+    const response = await fetch(
+      `${ETHOS_API_BASE_URL}/score/address?address=${walletAddress}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Ethos-Client': ETHOS_CLIENT_NAME,
+        },
+        cache: 'no-store',
+      }
+    )
+
+    if (!response.ok) {
+      console.error(`Score API error: ${response.status} ${response.statusText}`)
+      return null
+    }
+
+    const data = await response.json()
+    return { score: data.score, level: data.level }
+  } catch (error) {
+    console.error('Error fetching score:', error)
+    return null
+  }
+}
+
+/**
+ * Get Ethos user profile data using activities endpoint with userkey
+ */
+async function getProfileByUserkey(walletAddress: string): Promise<{
+  profileId: number
+  username: string | null
+  score: number
+  positiveReviews: number
+  negativeReviews: number
+  vouches: number
+  primaryAddress: string
+} | null> {
+  try {
+    const userkey = `address:${walletAddress}`
+    
+    const response = await fetch(
+      `${ETHOS_API_BASE_URL}/activities/profile/received`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Ethos-Client': ETHOS_CLIENT_NAME,
+        },
+        body: JSON.stringify({
+          userkey,
+          filter: ['review', 'vouch'],
+          limit: 1,
+        }),
+        cache: 'no-store',
+      }
+    )
+
+    if (!response.ok) {
+      console.error(`Profile API error: ${response.status} ${response.statusText}`)
+      return null
+    }
+
+    const data = await response.json()
+    
+    // Extract user data from subjectUser in the response
+    if (data.values && data.values.length > 0 && data.values[0].subjectUser) {
+      const user = data.values[0].subjectUser
+      return {
+        profileId: user.profileId,
+        username: user.username,
+        score: user.score,
+        positiveReviews: user.stats?.review?.received?.positive || 0,
+        negativeReviews: user.stats?.review?.received?.negative || 0,
+        vouches: user.stats?.vouch?.received?.count || 0,
+        primaryAddress: user.userkeys?.find((k: string) => k.startsWith('address:'))?.replace('address:', '') || walletAddress,
+      }
+    }
+
+    return null
+  } catch (error) {
+    console.error('Error fetching profile:', error)
+    return null
+  }
+}
+
+/**
+ * Get Ethos user profile by wallet address
+ * Main function that combines score and profile data
+ */
+export async function getEthosUserByWalletAddress(
+  walletAddress: string,
+  clientName: string = ETHOS_CLIENT_NAME
+): Promise<EthosUser | null> {
+  console.log('DEBUG: Fetching Ethos user for wallet:', walletAddress)
+
+  try {
+    // First, get the score
+    const scoreData = await getScoreByAddress(walletAddress)
+    
+    if (!scoreData) {
+      console.log('DEBUG: No score found for address')
+      return null
+    }
+
+    console.log('DEBUG: Score found:', scoreData.score)
+
+    // Then get profile details
+    const profileData = await getProfileByUserkey(walletAddress)
+
+    if (profileData) {
+      console.log('DEBUG: Profile found:', profileData.username, 'Score:', profileData.score)
+      return {
+        profileId: profileData.profileId,
+        primaryAddress: profileData.primaryAddress,
+        username: profileData.username || `user_${profileData.profileId}`,
+        score: profileData.score, // Use score from profile (more accurate)
+        positiveReviews: profileData.positiveReviews,
+        negativeReviews: profileData.negativeReviews,
+        vouches: profileData.vouches,
+        accountCreatedAt: new Date().toISOString(), // Not available from this endpoint
+        hasSlashProtection: true, // Default, could be checked separately
+      }
+    }
+
+    // Fallback: return minimal data with just score
+    console.log('DEBUG: Using score-only fallback')
+    return {
+      profileId: 0,
+      primaryAddress: walletAddress,
+      username: `user_${walletAddress.slice(0, 8)}`,
+      score: scoreData.score,
+      positiveReviews: 0,
+      negativeReviews: 0,
+      vouches: 0,
+      accountCreatedAt: new Date().toISOString(),
+      hasSlashProtection: true,
+    }
+
+  } catch (error) {
+    console.error('Error fetching Ethos user by wallet:', error)
+    return null
   }
 }
 
@@ -42,8 +195,8 @@ export async function getEthosUserByProfileId(
       {
         headers: {
           "Content-Type": "application/json",
+          "X-Ethos-Client": ETHOS_CLIENT_NAME,
         },
-        // Cache for 5 minutes to reduce API calls
         next: { revalidate: 300 },
       }
     )
@@ -70,6 +223,7 @@ export async function getEthosUserByProfileId(
       negativeReviews: data.data.negativeReviewCount,
       vouches: data.data.receivedVouchCount,
       accountCreatedAt: data.data.createdAt,
+      hasSlashProtection: !data.data.slashed,
     }
   } catch (error) {
     console.error("Error fetching Ethos user:", error)
@@ -77,6 +231,30 @@ export async function getEthosUserByProfileId(
   }
 }
 
+/**
+ * Helper function to convert Ethos user to application profile format
+ */
+export function ethosUserToApplicationProfile(user: EthosUser) {
+  const accountAge = Math.floor(
+    (Date.now() - new Date(user.accountCreatedAt).getTime()) /
+      (1000 * 60 * 60 * 24)
+  )
+
+  const score = typeof user.score === 'number' && !isNaN(user.score)
+    ? user.score
+    : 0
+
+  return {
+    profileId: user.profileId,
+    username: user.username || `user_${user.profileId}`, // Добавлен fallback
+    score,
+    vouches: user.vouches || 0,
+    positiveReviews: user.positiveReviews || 0,
+    negativeReviews: user.negativeReviews || 0,
+    accountAge,
+    hasSlashProtection: user.hasSlashProtection ?? true,
+  }
+}
 /**
  * Get Ethos OAuth authorization URL
  */
@@ -128,7 +306,6 @@ export async function exchangeEthosCode(
       return null
     }
 
-    // Get user info using access token
     const userResponse = await fetch(`${ETHOS_API_BASE_URL}/users/me`, {
       headers: {
         Authorization: `Bearer ${data.access_token}`,
@@ -150,72 +327,5 @@ export async function exchangeEthosCode(
   } catch (error) {
     console.error("Error exchanging Ethos code:", error)
     return null
-  }
-}
-
-/**
- * Get Ethos user profile by Ethos Everywhere wallet address
- */
-export async function getEthosUserByWalletAddress(
-  walletAddress: string,
-  clientName: string = 'reputation-gateway'
-): Promise<EthosUser | null> {
-  try {
-    const response = await fetch(
-      `${ETHOS_API_BASE_URL}/users/by/ethos-everywhere-wallet/${walletAddress}`,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Ethos-Client': clientName,
-        },
-        next: { revalidate: 300 }, // Cache 5 minutes
-      }
-    )
-
-    if (!response.ok) {
-      console.error(`Ethos API error: ${response.status} ${response.statusText}`)
-      return null
-    }
-
-    const data: EthosUserResponse = await response.json()
-
-    if (!data.success || !data.data) {
-      return null
-    }
-
-    return {
-      profileId: data.data.id,
-      primaryAddress: data.data.primaryAddress,
-      username: data.data.username || `user_${data.data.id}`,
-      score: data.data.score,
-      positiveReviews: data.data.positiveReviewCount,
-      negativeReviews: data.data.negativeReviewCount,
-      vouches: data.data.receivedVouchCount,
-      accountCreatedAt: data.data.createdAt,
-    }
-  } catch (error) {
-    console.error('Error fetching Ethos user by wallet:', error)
-    return null
-  }
-}
-
-/**
- * Helper function to convert Ethos user to application profile format
- */
-export function ethosUserToApplicationProfile(user: EthosUser) {
-  // Calculate account age in days
-  const accountAge = Math.floor(
-    (Date.now() - new Date(user.accountCreatedAt).getTime()) /
-      (1000 * 60 * 60 * 24)
-  )
-
-  return {
-    profileId: user.profileId,
-    username: user.username,
-    score: user.score,
-    vouches: user.vouches,
-    positiveReviews: user.positiveReviews,
-    negativeReviews: user.negativeReviews,
-    accountAge,
   }
 }

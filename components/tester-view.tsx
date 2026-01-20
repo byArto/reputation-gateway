@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { ShieldCheck, Check, Lock } from "lucide-react"
-import { usePrivy, useCrossAppAccounts } from '@privy-io/react-auth'
+import { usePrivy } from '@privy-io/react-auth'
 
 interface TesterViewProps {
   projectName?: string
@@ -22,24 +22,47 @@ export default function TesterView({
   slug
 }: TesterViewProps) {
   const router = useRouter()
-  const { ready, authenticated, user, login } = usePrivy()
-  const { linkCrossAppAccount } = useCrossAppAccounts()
+  const { ready, authenticated, user, login, logout } = usePrivy()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [manualSubmit, setManualSubmit] = useState(false) // Новый флаг
 
-  // Автоматически подать заявку после аутентификации
+  // Сбросить состояние при смене проекта (slug)
   useEffect(() => {
-    if (!ready || !authenticated || !user || isSubmitting) return
+    setIsSubmitting(false)
+    setError(null)
+    setManualSubmit(false)
+  }, [slug])
+
+  // Подать заявку ТОЛЬКО после ручного нажатия кнопки
+  useEffect(() => {
+    if (!ready || !authenticated || !user || isSubmitting || !manualSubmit) return
+
+    // Получить адрес кошелька
+    const externalWallet = user.linkedAccounts?.find(
+      (account) => account.type === 'wallet'
+    )
 
     const crossAppAccount = user.linkedAccounts?.find(
       (account) => account.type === 'cross_app'
     )
 
-    if (!crossAppAccount || !crossAppAccount.embeddedWallets?.[0]?.address) {
+    let walletAddress: string | undefined
+
+    if (externalWallet && 'address' in externalWallet) {
+      walletAddress = externalWallet.address
+    } else if (crossAppAccount && 'embeddedWallets' in crossAppAccount && crossAppAccount.embeddedWallets?.[0]?.address) {
+      walletAddress = crossAppAccount.embeddedWallets[0].address
+    }
+
+    if (!walletAddress) {
+      setError("No wallet found. Please reconnect.")
+      setManualSubmit(false)
       return
     }
 
-    const walletAddress = crossAppAccount.embeddedWallets[0].address
+    console.log('DEBUG Frontend: Wallet address:', walletAddress)
+    console.log('DEBUG Frontend: All linked accounts:', JSON.stringify(user.linkedAccounts, null, 2))
 
     setIsSubmitting(true)
 
@@ -50,17 +73,19 @@ export default function TesterView({
     })
       .then((response) => response.json())
       .then((data) => {
+        console.log('DEBUG Frontend: API response:', data)
+        
         if (data.status === "accepted") {
           router.push(
             `/${slug}/result?status=accepted&url=${encodeURIComponent(
               data.destination_url
-            )}&type=discord&score=${data.user_score}`
+            )}&type=discord&score=${data.user_score}&required=${data.required_score || 1400}`
           )
         } else {
           router.push(
             `/${slug}/result?status=rejected&reason=${encodeURIComponent(
-              data.rejection_reason || "Requirements not met"
-            )}&reapply=${data.can_reapply_at || ""}&score=${data.user_score}`
+              data.rejection_reason || data.error || "Requirements not met"
+            )}&reapply=${data.can_reapply_at || ""}&score=${data.user_score || 0}&required=${data.required_score || 1400}`
           )
         }
       })
@@ -68,8 +93,9 @@ export default function TesterView({
         console.error("Error:", err)
         setError("Failed to submit. Please try again.")
         setIsSubmitting(false)
+        setManualSubmit(false)
       })
-  }, [ready, authenticated, user, slug, router, isSubmitting])
+  }, [ready, authenticated, user, slug, router, isSubmitting, manualSubmit])
 
   const handleCheckAccess = async () => {
     try {
@@ -77,26 +103,25 @@ export default function TesterView({
 
       if (!authenticated) {
         await login()
+        // После успешного логина, установить флаг для отправки
+        setManualSubmit(true)
         return
       }
 
-      const crossAppAccount = user?.linkedAccounts?.find(
-        (account) => account.type === 'cross_app'
-      )
+      // Если уже залогинен, просто отправить заявку
+      setManualSubmit(true)
 
-      if (!crossAppAccount) {
-        const ethosProviderAppId = process.env.NEXT_PUBLIC_ETHOS_PROVIDER_APP_ID
-        if (!ethosProviderAppId) {
-          setError("Ethos integration not configured")
-          return
-        }
-
-        await linkCrossAppAccount({ appId: ethosProviderAppId })
-      }
     } catch (error) {
       console.error("Auth error:", error)
       setError("Authentication failed. Please try again.")
     }
+  }
+
+  const handleLogout = async () => {
+    await logout()
+    setManualSubmit(false)
+    setIsSubmitting(false)
+    setError(null)
   }
 
   return (
@@ -141,12 +166,27 @@ export default function TesterView({
           </div>
         )}
 
+        {/* Показать статус если залогинен */}
+        {authenticated && (
+          <div className="w-full rounded-lg bg-blue-50 border border-blue-200 p-4 mb-6">
+            <p className="text-sm text-blue-800 font-sans">
+              Connected as: {user?.wallet?.address?.slice(0, 6)}...{user?.wallet?.address?.slice(-4)}
+            </p>
+            <button 
+              onClick={handleLogout}
+              className="text-sm text-blue-600 underline mt-2"
+            >
+              Disconnect and try different wallet
+            </button>
+          </div>
+        )}
+
         <button
           onClick={handleCheckAccess}
           disabled={!ready || isSubmitting}
           className="w-full bg-[#1E3A5F] text-white font-sans font-medium text-[18px] py-5 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isSubmitting ? "Checking..." : "Check My Access"}
+          {isSubmitting ? "Checking..." : authenticated ? "Check My Access" : "Connect Wallet"}
         </button>
 
         <div className="flex items-center gap-2 mt-6">
