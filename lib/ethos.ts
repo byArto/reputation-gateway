@@ -47,7 +47,7 @@ async function getScoreByAddress(walletAddress: string): Promise<{ score: number
           'Content-Type': 'application/json',
           'X-Ethos-Client': ETHOS_CLIENT_NAME,
         },
-        cache: 'no-store',
+        next: { revalidate: 60 }, // Cache for 1 minute in dev
       }
     )
 
@@ -81,7 +81,7 @@ async function getProfileCreatedAt(walletAddress: string): Promise<string | null
           addresses: [walletAddress],
           limit: 1,
         }),
-        cache: 'no-store',
+        next: { revalidate: 60 }, // Cache for 1 minute in dev
       }
     )
 
@@ -143,7 +143,7 @@ async function getProfileByUserkey(walletAddress: string): Promise<{
           filter: ['review', 'vouch'],
           limit: 1,
         }),
-        cache: 'no-store',
+        next: { revalidate: 60 }, // Cache for 1 minute in dev
       }
     )
 
