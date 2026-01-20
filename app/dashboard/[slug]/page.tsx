@@ -198,6 +198,16 @@ export default function DashboardPage() {
     )
   }
 
+  // Get full page URL
+  const pageUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/${slug}`
+    : `https://yourdomain.com/${slug}`
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(pageUrl)
+    alert('Page URL copied to clipboard!')
+  }
+
   return (
     <div className="min-h-screen bg-[#EFE9DF]">
       {/* Stats Section */}
@@ -218,6 +228,27 @@ export default function DashboardPage() {
 
       {/* Applications List Section */}
       <div className="max-w-[1000px] mx-auto px-4 pb-16">
+        {/* Page URL Section */}
+        <div className="bg-white border border-[#E5E0D8] rounded-xl p-6 mb-6">
+          <h3 className="font-sans text-sm font-medium text-[#5C5C5C] mb-2">
+            Share this URL with testers:
+          </h3>
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              value={pageUrl}
+              readOnly
+              className="flex-1 px-4 py-3 bg-[#F8F6F3] border border-[#E5E0D8] rounded-lg font-mono text-sm text-[#1E3A5F] focus:outline-none"
+            />
+            <button
+              onClick={copyToClipboard}
+              className="px-6 py-3 bg-[#1E3A5F] text-white font-sans font-medium rounded-lg hover:bg-[#152d47] transition-colors"
+            >
+              Copy
+            </button>
+          </div>
+        </div>
+
         <div className="mb-6">
           <h2 className="font-serif text-3xl text-[#1A1A1A] mb-2">
             Recent Applications

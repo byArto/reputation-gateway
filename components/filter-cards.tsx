@@ -66,8 +66,21 @@ export default function FilterCards({ onContinue }: FilterCardsProps) {
   const handleCustomToggle = () => {
     if (!customExpanded) {
       setSelectedPreset(null)
+    } else {
+      // When closing custom, reset to standard
+      setSelectedPreset("standard")
     }
     setCustomExpanded(!customExpanded)
+  }
+
+  const handleContinueClick = () => {
+    if (customExpanded) {
+      // For custom settings, pass "custom" preset
+      // The form will need to handle custom settings separately
+      onContinue("custom" as FilterPreset)
+    } else if (selectedPreset) {
+      onContinue(selectedPreset)
+    }
   }
 
   return (
@@ -307,8 +320,8 @@ export default function FilterCards({ onContinue }: FilterCardsProps) {
         {/* Continue Button */}
         <div className="flex justify-center">
           <button
-            onClick={() => selectedPreset && onContinue(selectedPreset)}
-            disabled={!selectedPreset}
+            onClick={handleContinueClick}
+            disabled={!selectedPreset && !customExpanded}
             className="bg-[#1E3A5F] text-white font-sans font-medium px-12 py-4 rounded-lg hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Continue

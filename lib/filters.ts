@@ -212,7 +212,7 @@ export function estimatePassRate(criteria: ProjectCriteria): number {
 /**
  * Get filter preset by name
  */
-export type FilterPreset = "basic" | "standard" | "strict"
+export type FilterPreset = "basic" | "standard" | "strict" | "custom"
 
 export function getFilterPreset(preset: FilterPreset): ProjectCriteria {
   switch (preset) {
@@ -236,6 +236,15 @@ export function getFilterPreset(preset: FilterPreset): ProjectCriteria {
         minVouches: 2,
         positiveReviews: true,
         minAccountAge: 30,
+      }
+    case "custom":
+      // For custom, return standard as default
+      // The actual custom values should be passed separately
+      return {
+        minScore: 1400,
+        minVouches: 0,
+        positiveReviews: false,
+        minAccountAge: 0,
       }
     default:
       return getFilterPreset("standard")
