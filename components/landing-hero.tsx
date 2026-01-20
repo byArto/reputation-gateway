@@ -41,12 +41,6 @@ export default function LandingHero() {
           >
             Create Access Page
           </button>
-          <button
-            onClick={() => router.push("/test-project")}
-            className="px-9 py-4 bg-transparent border border-[#1E3A5F] text-[#1E3A5F] font-sans font-medium rounded-lg hover:bg-[#1E3A5F]/5 transition-all duration-200"
-          >
-            View Demo
-          </button>
         </div>
 
         {/* Stats */}
