@@ -65,6 +65,57 @@ async function getScoreByAddress(walletAddress: string): Promise<{ score: number
 }
 
 /**
+ * Get profile creation date using /profiles endpoint
+ */
+async function getProfileCreatedAt(walletAddress: string): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `${ETHOS_API_BASE_URL}/profiles`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Ethos-Client': ETHOS_CLIENT_NAME,
+        },
+        body: JSON.stringify({
+          addresses: [walletAddress],
+          limit: 1,
+        }),
+        cache: 'no-store',
+      }
+    )
+
+    if (!response.ok) {
+      console.error(`Profiles API error: ${response.status} ${response.statusText}`)
+      return null
+    }
+
+    const data = await response.json()
+
+    console.log('DEBUG getProfileCreatedAt: API response:', JSON.stringify(data, null, 2))
+
+    if (data.values && data.values.length > 0) {
+      const profileData = data.values[0]
+
+      // createdAt находится в profile.createdAt, а не в values[0].createdAt
+      if (profileData.profile && profileData.profile.createdAt) {
+        const createdAt = profileData.profile.createdAt
+        console.log('DEBUG getProfileCreatedAt: Found createdAt:', createdAt)
+
+        // createdAt это timestamp в миллисекундах (number)
+        return new Date(createdAt).toISOString()
+      }
+    }
+
+    console.log('DEBUG getProfileCreatedAt: No createdAt found')
+    return null
+  } catch (error) {
+    console.error('Error fetching profile createdAt:', error)
+    return null
+  }
+}
+
+/**
  * Get Ethos user profile data using activities endpoint with userkey
  */
 async function getProfileByUserkey(walletAddress: string): Promise<{
@@ -145,11 +196,16 @@ export async function getEthosUserByWalletAddress(
 
     console.log('DEBUG: Score found:', scoreData.score)
 
-    // Then get profile details
-    const profileData = await getProfileByUserkey(walletAddress)
+    // Get profile details and creation date in parallel
+    const [profileData, createdAt] = await Promise.all([
+      getProfileByUserkey(walletAddress),
+      getProfileCreatedAt(walletAddress)
+    ])
 
     if (profileData) {
       console.log('DEBUG: Profile found:', profileData.username, 'Score:', profileData.score)
+      console.log('DEBUG: Account created at:', createdAt || 'unknown')
+
       return {
         profileId: profileData.profileId,
         primaryAddress: profileData.primaryAddress,
@@ -158,7 +214,7 @@ export async function getEthosUserByWalletAddress(
         positiveReviews: profileData.positiveReviews,
         negativeReviews: profileData.negativeReviews,
         vouches: profileData.vouches,
-        accountCreatedAt: new Date().toISOString(), // Not available from this endpoint
+        accountCreatedAt: createdAt || new Date().toISOString(), // Use real creation date if available
         hasSlashProtection: true, // Default, could be checked separately
       }
     }
@@ -173,7 +229,7 @@ export async function getEthosUserByWalletAddress(
       positiveReviews: 0,
       negativeReviews: 0,
       vouches: 0,
-      accountCreatedAt: new Date().toISOString(),
+      accountCreatedAt: createdAt || new Date().toISOString(), // Use real creation date if available
       hasSlashProtection: true,
     }
 

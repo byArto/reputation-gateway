@@ -47,6 +47,9 @@ export function checkEligibility(
   projectCriteria: ProjectCriteria,
   manualReview: boolean = false
 ): EligibilityResult {
+  console.log('DEBUG checkEligibility: User profile:', JSON.stringify(userProfile, null, 2))
+  console.log('DEBUG checkEligibility: Criteria:', JSON.stringify(projectCriteria, null, 2))
+
   const failedCriteria: string[] = []
 
   // 1. HARD REJECT: Slash protection check
@@ -77,8 +80,12 @@ export function checkEligibility(
 
   // 4. Check positive review balance
   if (projectCriteria.positiveReviews) {
+    const hasReviews = (userProfile.positiveReviews + userProfile.negativeReviews) > 0
     const reviewBalance = userProfile.positiveReviews - userProfile.negativeReviews
-    if (reviewBalance <= 0) {
+
+    // Only fail if user HAS reviews but balance is not positive
+    // If user has no reviews at all (0 positive, 0 negative), that's acceptable
+    if (hasReviews && reviewBalance <= 0) {
       failedCriteria.push(
         `Review balance ${reviewBalance} is not positive (${userProfile.positiveReviews} positive, ${userProfile.negativeReviews} negative)`
       )
@@ -94,6 +101,7 @@ export function checkEligibility(
 
   // If any hard criteria failed, reject immediately
   if (failedCriteria.length > 0) {
+    console.log('DEBUG checkEligibility: REJECTED -', failedCriteria.join("; "))
     return {
       eligible: false,
       status: "rejected",
@@ -105,6 +113,7 @@ export function checkEligibility(
   // All criteria passed
   // If manual review is enabled, mark as pending
   if (manualReview) {
+    console.log('DEBUG checkEligibility: PENDING - Manual review required')
     return {
       eligible: true,
       status: "pending",
@@ -113,6 +122,7 @@ export function checkEligibility(
   }
 
   // Auto-accept if all criteria passed and no manual review
+  console.log('DEBUG checkEligibility: ACCEPTED - All criteria met')
   return {
     eligible: true,
     status: "accepted",
