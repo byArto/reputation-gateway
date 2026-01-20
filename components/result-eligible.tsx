@@ -1,6 +1,7 @@
 "use client"
 
-import { CheckCircle, Check } from "lucide-react"
+import { useState } from "react"
+import { CheckCircle, Check, Loader2 } from "lucide-react"
 
 interface EligibleAccessCardProps {
   score: number
@@ -12,6 +13,8 @@ interface EligibleAccessCardProps {
   requiresPositiveReviews: boolean
   accountAge: number
   requiredAccountAge: number
+  inviteToken: string
+  tokenExpiresAt: string
   destinationUrl: string
   destinationType: "discord" | "beta"
 }
@@ -26,11 +29,50 @@ export default function ResultEligible({
   requiresPositiveReviews,
   accountAge,
   requiredAccountAge,
+  inviteToken,
+  tokenExpiresAt,
   destinationUrl,
   destinationType,
 }: EligibleAccessCardProps) {
-  const buttonText = destinationType === "discord" ? "Join Discord" : "Access Beta"
+  const [isRedeeming, setIsRedeeming] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Auto-detect destination type from URL
+  const isDiscord = destinationUrl.includes('discord.gg') || destinationUrl.includes('discord.com')
+  const buttonText = isDiscord ? "Join Discord" : "Access Website"
   const reviewBalance = positiveReviews - negativeReviews
+
+  const handleAccessClick = async () => {
+    // If no token, use old direct link (backward compatibility)
+    if (!inviteToken) {
+      window.open(destinationUrl, '_blank')
+      return
+    }
+
+    setIsRedeeming(true)
+    setError(null)
+
+    try {
+      const response = await fetch(`/api/invites/${inviteToken}`, {
+        method: 'POST'
+      })
+
+      const data = await response.json()
+
+      if (data.success && data.redirect_url) {
+        // Redirect to destination
+        window.location.href = data.redirect_url
+      } else {
+        // Show error
+        setError(data.message || 'Failed to access invite')
+        setIsRedeeming(false)
+      }
+    } catch (err) {
+      console.error('Error redeeming invite:', err)
+      setError('Network error. Please try again.')
+      setIsRedeeming(false)
+    }
+  }
 
   return (
     <div className="animate-in fade-in zoom-in-95 duration-500 w-full max-w-[500px] mx-auto">
@@ -83,7 +125,7 @@ export default function ResultEligible({
           className="font-sans text-base leading-relaxed max-w-[380px] mx-auto mb-6"
           style={{ color: "#5C5C5C" }}
         >
-          You meet all project requirements. Click below to access the beta.
+          You meet all project requirements. Click below to {isDiscord ? "join the Discord server" : "access the website"}.
         </p>
 
         {/* Requirements Details */}
@@ -128,16 +170,36 @@ export default function ResultEligible({
           </div>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="rounded-lg bg-red-50 border border-red-200 p-4 mb-6">
+            <p className="text-sm text-red-600 font-sans">{error}</p>
+          </div>
+        )}
+
         {/* Primary Button */}
-        <a
-          href={destinationUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block w-full py-[18px] rounded-xl font-sans text-base font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg mb-4"
+        <button
+          onClick={handleAccessClick}
+          disabled={isRedeeming}
+          className="w-full py-[18px] rounded-xl font-sans text-base font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ backgroundColor: "#1E3A5F" }}
         >
-          {buttonText}
-        </a>
+          {isRedeeming ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Preparing your invite...
+            </span>
+          ) : (
+            buttonText
+          )}
+        </button>
+
+        {/* Expiration Notice */}
+        {inviteToken && tokenExpiresAt && (
+          <p className="text-xs text-gray-500 mb-4">
+            This invite expires: {new Date(tokenExpiresAt).toLocaleString()}
+          </p>
+        )}
 
         {/* Secondary Link */}
         <a

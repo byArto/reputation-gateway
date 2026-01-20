@@ -7,6 +7,8 @@ interface ResultPageProps {
   }>
   searchParams: Promise<{
     status: string
+    invite_token?: string
+    token_expires_at?: string
     url?: string
     type?: string
     reason?: string
@@ -27,6 +29,8 @@ export default async function ResultPage({ params, searchParams }: ResultPagePro
   await params
   const {
     status,
+    invite_token,
+    token_expires_at,
     url,
     type,
     reason,
@@ -53,7 +57,7 @@ export default async function ResultPage({ params, searchParams }: ResultPagePro
   const accountAgeInDays = account_age ? parseInt(account_age) : 0
   const requiredAccountAgeInDays = required_account_age ? parseInt(required_account_age) : 0
 
-  if (status === "accepted" && url) {
+  if (status === "accepted" && (invite_token || url)) {
     return (
       <ResultEligible
         score={currentScore}
@@ -65,7 +69,9 @@ export default async function ResultPage({ params, searchParams }: ResultPagePro
         requiresPositiveReviews={requiresPositiveReviewsFlag}
         accountAge={accountAgeInDays}
         requiredAccountAge={requiredAccountAgeInDays}
-        destinationUrl={url}
+        inviteToken={invite_token || ""}
+        tokenExpiresAt={token_expires_at || ""}
+        destinationUrl={url || ""}
         destinationType={(type as "discord" | "beta") || "discord"}
       />
     )

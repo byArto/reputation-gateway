@@ -98,7 +98,9 @@ export default function TesterView({
         if (data.status === "accepted") {
           const params = new URLSearchParams({
             status: "accepted",
-            url: data.destination_url,
+            invite_token: data.invite_token || "",
+            token_expires_at: data.token_expires_at || "",
+            url: data.destination_url || "",
             type: "discord",
             score: String(data.user_score),
             required_score: String(data.required_score || 1400),

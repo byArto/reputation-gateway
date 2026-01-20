@@ -3,6 +3,7 @@ import { getEthosUserByWalletAddress, ethosUserToApplicationProfile } from "@/li
 import { createSession } from "@/lib/session"
 import { createApplication, getProjectBySlug, checkExistingApplication } from "@/lib/db"
 import { validateCriteria, calculateReapplyDate } from "@/lib/validation"
+import { createInviteToken, findValidTokenForApplication } from "@/lib/invite-tokens"
 
 /**
  * Create session from Privy authentication
@@ -94,6 +95,8 @@ export async function POST(request: Request) {
           requires_positive_reviews: boolean
           user_account_age: number
           required_account_age: number
+          invite_token?: string
+          token_expires_at?: string
           destination_url?: string
           rejection_reason?: string
           failed_criteria?: string[]
@@ -113,7 +116,21 @@ export async function POST(request: Request) {
         }
 
         if (existingApplication.status === "accepted") {
-          response.destination_url = project.destination_url
+          // Check if valid token already exists
+          let tokenData = await findValidTokenForApplication(existingApplication.id)
+
+          // If no valid token, create new one
+          if (!tokenData) {
+            tokenData = await createInviteToken({
+              applicationId: existingApplication.id,
+              projectId: project.id,
+              ethosProfileId: ethosProfile.profileId,
+              destinationUrl: project.destination_url
+            })
+          }
+
+          response.invite_token = tokenData.token
+          response.token_expires_at = tokenData.expiresAt.toISOString()
         }
 
         return NextResponse.json(response)
@@ -153,6 +170,8 @@ export async function POST(request: Request) {
       requires_positive_reviews: boolean
       user_account_age: number
       required_account_age: number
+      invite_token?: string
+      token_expires_at?: string
       destination_url?: string
       rejection_reason?: string
       failed_criteria?: string[]
@@ -180,7 +199,16 @@ export async function POST(request: Request) {
     }
 
     if (validation.status === "accepted") {
-      response.destination_url = project.destination_url
+      // Create invite token for new application
+      const tokenData = await createInviteToken({
+        applicationId: application.id,
+        projectId: project.id,
+        ethosProfileId: ethosProfile.profileId,
+        destinationUrl: project.destination_url
+      })
+
+      response.invite_token = tokenData.token
+      response.token_expires_at = tokenData.expiresAt.toISOString()
     }
 
     return NextResponse.json(response)
