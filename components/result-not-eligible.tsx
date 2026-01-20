@@ -1,20 +1,36 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { XCircle, AlertCircle, Clock } from "lucide-react"
+import { XCircle, Clock, X, Check } from "lucide-react"
 
 interface NotEligibleScreenProps {
   reason: string
   currentScore: number
   requiredScore: number
+  vouches: number
+  requiredVouches: number
+  positiveReviews: number
+  negativeReviews: number
+  requiresPositiveReviews: boolean
+  accountAge: number
+  requiredAccountAge: number
   canReapplyAt: number
 }
 
 export default function ResultNotEligible({
   currentScore,
   requiredScore,
+  vouches,
+  requiredVouches,
+  positiveReviews,
+  negativeReviews,
+  requiresPositiveReviews,
+  accountAge,
+  requiredAccountAge,
   canReapplyAt,
 }: NotEligibleScreenProps) {
+  const reviewBalance = positiveReviews - negativeReviews
+  const hasReviews = positiveReviews + negativeReviews > 0
   const improvementTips = [
     "Complete more transactions on Ethos",
     "Get vouches from trusted users",
@@ -57,13 +73,61 @@ export default function ResultNotEligible({
           Not Eligible
         </h1>
 
-        {/* Reason Box */}
-        <div className="bg-[#F9F9F9] border border-[#E5E0D8] rounded-xl p-5 my-8">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-[#EF4444] shrink-0 mt-0.5" />
-            <p className="font-sans text-sm text-[#4A4A4A] text-left">
-              Your Ethos Score ({currentScore}) is below the minimum requirement ({requiredScore})
-            </p>
+        {/* Requirements Details */}
+        <div className="bg-red-50 border border-red-200 rounded-xl p-5 my-8">
+          <h3 className="font-sans text-sm font-semibold text-red-900 mb-3 text-left">
+            Requirements Not Met
+          </h3>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+              {currentScore >= requiredScore ? (
+                <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+              ) : (
+                <X className="w-4 h-4 text-red-600 flex-shrink-0" />
+              )}
+              <span className={currentScore >= requiredScore ? "text-green-900" : "text-red-900"}>
+                <span className="font-medium">Score:</span> {currentScore} / {requiredScore} required
+              </span>
+            </div>
+
+            {requiredVouches > 0 && (
+              <div className="flex items-center gap-2 text-sm">
+                {vouches >= requiredVouches ? (
+                  <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+                ) : (
+                  <X className="w-4 h-4 text-red-600 flex-shrink-0" />
+                )}
+                <span className={vouches >= requiredVouches ? "text-green-900" : "text-red-900"}>
+                  <span className="font-medium">Vouches:</span> {vouches} / {requiredVouches} required
+                </span>
+              </div>
+            )}
+
+            {requiresPositiveReviews && (
+              <div className="flex items-center gap-2 text-sm">
+                {(!hasReviews || reviewBalance > 0) ? (
+                  <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+                ) : (
+                  <X className="w-4 h-4 text-red-600 flex-shrink-0" />
+                )}
+                <span className={(!hasReviews || reviewBalance > 0) ? "text-green-900" : "text-red-900"}>
+                  <span className="font-medium">Reviews:</span> {positiveReviews} positive, {negativeReviews} negative (balance: {reviewBalance >= 0 ? '+' : ''}{reviewBalance})
+                </span>
+              </div>
+            )}
+
+            {requiredAccountAge > 0 && (
+              <div className="flex items-center gap-2 text-sm">
+                {accountAge >= requiredAccountAge ? (
+                  <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+                ) : (
+                  <X className="w-4 h-4 text-red-600 flex-shrink-0" />
+                )}
+                <span className={accountAge >= requiredAccountAge ? "text-green-900" : "text-red-900"}>
+                  <span className="font-medium">Account Age:</span> {accountAge} days / {requiredAccountAge} required
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

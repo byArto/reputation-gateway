@@ -8,7 +8,11 @@ interface PrivyProviderProps {
 }
 
 export default function PrivyProvider({ children }: PrivyProviderProps) {
-  const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID!
+  const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID
+
+  if (!appId) {
+    throw new Error('NEXT_PUBLIC_PRIVY_APP_ID is not defined in environment variables')
+  }
 
   return (
     <BasePrivyProvider
@@ -18,14 +22,7 @@ export default function PrivyProvider({ children }: PrivyProviderProps) {
           theme: 'light',
           accentColor: '#1E3A5F',
         },
-        embeddedWallets: {
-          createOnLogin: 'off',
-        },
-        externalWallets: {
-          coinbaseWallet: false,
-          metamask: true,
-          rainbow: false,
-        },
+        loginMethods: ['wallet'],
       }}
     >
       {children}

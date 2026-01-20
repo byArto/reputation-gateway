@@ -24,7 +24,7 @@ export default function TesterView({
   const router = useRouter()
   const { ready, authenticated, user, login, logout } = usePrivy()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | React.ReactNode | null>(null)
   const [manualSubmit, setManualSubmit] = useState(false) // Новый флаг
 
   // Сбросить состояние при смене проекта (slug)
@@ -74,19 +74,59 @@ export default function TesterView({
       .then((response) => response.json())
       .then((data) => {
         console.log('DEBUG Frontend: API response:', data)
-        
+
+        // Check for Ethos registration error
+        if (data.error && data.message && data.registration_url) {
+          setError(
+            <span>
+              {data.message}.{' '}
+              <a
+                href={data.registration_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline font-semibold"
+              >
+                Register at Ethos Network
+              </a>
+            </span>
+          )
+          setIsSubmitting(false)
+          setManualSubmit(false)
+          return
+        }
+
         if (data.status === "accepted") {
-          router.push(
-            `/${slug}/result?status=accepted&url=${encodeURIComponent(
-              data.destination_url
-            )}&type=discord&score=${data.user_score}&required=${data.required_score || 1400}`
-          )
+          const params = new URLSearchParams({
+            status: "accepted",
+            url: data.destination_url,
+            type: "discord",
+            score: String(data.user_score),
+            required_score: String(data.required_score || 1400),
+            vouches: String(data.user_vouches),
+            required_vouches: String(data.required_vouches || 0),
+            positive_reviews: String(data.user_positive_reviews),
+            negative_reviews: String(data.user_negative_reviews),
+            requires_positive_reviews: String(data.requires_positive_reviews),
+            account_age: String(data.user_account_age),
+            required_account_age: String(data.required_account_age || 0),
+          })
+          router.push(`/${slug}/result?${params.toString()}`)
         } else {
-          router.push(
-            `/${slug}/result?status=rejected&reason=${encodeURIComponent(
-              data.rejection_reason || data.error || "Requirements not met"
-            )}&reapply=${data.can_reapply_at || ""}&score=${data.user_score || 0}&required=${data.required_score || 1400}`
-          )
+          const params = new URLSearchParams({
+            status: "rejected",
+            reason: data.rejection_reason || data.error || "Requirements not met",
+            reapply: data.can_reapply_at || "",
+            score: String(data.user_score || 0),
+            required_score: String(data.required_score || 1400),
+            vouches: String(data.user_vouches || 0),
+            required_vouches: String(data.required_vouches || 0),
+            positive_reviews: String(data.user_positive_reviews || 0),
+            negative_reviews: String(data.user_negative_reviews || 0),
+            requires_positive_reviews: String(data.requires_positive_reviews || false),
+            account_age: String(data.user_account_age || 0),
+            required_account_age: String(data.required_account_age || 0),
+          })
+          router.push(`/${slug}/result?${params.toString()}`)
         }
       })
       .catch((err) => {

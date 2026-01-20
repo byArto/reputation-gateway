@@ -27,7 +27,11 @@ export async function POST(request: Request) {
 
     if (!ethosUser) {
       return NextResponse.json(
-        { error: "Ethos profile not found. Create account at ethos.network" },
+        {
+          error: "Ethos profile not found",
+          message: "Please register at Ethos Network first",
+          registration_url: "https://ethos.network"
+        },
         { status: 404 }
       )
     }
@@ -83,6 +87,13 @@ export async function POST(request: Request) {
           status: "accepted" | "rejected" | "pending"
           user_score: number
           required_score: number
+          user_vouches: number
+          required_vouches: number
+          user_positive_reviews: number
+          user_negative_reviews: number
+          requires_positive_reviews: boolean
+          user_account_age: number
+          required_account_age: number
           destination_url?: string
           rejection_reason?: string
           failed_criteria?: string[]
@@ -92,6 +103,13 @@ export async function POST(request: Request) {
           status: existingApplication.status as "accepted" | "pending",
           user_score: ethosProfile.score,
           required_score: project.criteria.minScore,
+          user_vouches: ethosProfile.vouches,
+          required_vouches: project.criteria.minVouches,
+          user_positive_reviews: ethosProfile.positiveReviews,
+          user_negative_reviews: ethosProfile.negativeReviews,
+          requires_positive_reviews: project.criteria.positiveReviews,
+          user_account_age: ethosProfile.accountAge,
+          required_account_age: project.criteria.minAccountAge,
         }
 
         if (existingApplication.status === "accepted") {
@@ -128,6 +146,13 @@ export async function POST(request: Request) {
       status: "accepted" | "rejected" | "pending"
       user_score: number
       required_score: number
+      user_vouches: number
+      required_vouches: number
+      user_positive_reviews: number
+      user_negative_reviews: number
+      requires_positive_reviews: boolean
+      user_account_age: number
+      required_account_age: number
       destination_url?: string
       rejection_reason?: string
       failed_criteria?: string[]
@@ -137,6 +162,13 @@ export async function POST(request: Request) {
       status: application.status as "accepted" | "rejected" | "pending",
       user_score: ethosProfile.score,
       required_score: project.criteria.minScore,
+      user_vouches: ethosProfile.vouches,
+      required_vouches: project.criteria.minVouches,
+      user_positive_reviews: ethosProfile.positiveReviews,
+      user_negative_reviews: ethosProfile.negativeReviews,
+      requires_positive_reviews: project.criteria.positiveReviews,
+      user_account_age: ethosProfile.accountAge,
+      required_account_age: project.criteria.minAccountAge,
     }
 
     if (validation.status === "rejected") {

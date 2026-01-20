@@ -1,19 +1,36 @@
 "use client"
 
-import { CheckCircle } from "lucide-react"
+import { CheckCircle, Check } from "lucide-react"
 
 interface EligibleAccessCardProps {
   score: number
+  requiredScore: number
+  vouches: number
+  requiredVouches: number
+  positiveReviews: number
+  negativeReviews: number
+  requiresPositiveReviews: boolean
+  accountAge: number
+  requiredAccountAge: number
   destinationUrl: string
   destinationType: "discord" | "beta"
 }
 
 export default function ResultEligible({
   score,
+  requiredScore,
+  vouches,
+  requiredVouches,
+  positiveReviews,
+  negativeReviews,
+  requiresPositiveReviews,
+  accountAge,
+  requiredAccountAge,
   destinationUrl,
   destinationType,
 }: EligibleAccessCardProps) {
   const buttonText = destinationType === "discord" ? "Join Discord" : "Access Beta"
+  const reviewBalance = positiveReviews - negativeReviews
 
   return (
     <div className="animate-in fade-in zoom-in-95 duration-500 w-full max-w-[500px] mx-auto">
@@ -63,11 +80,53 @@ export default function ResultEligible({
 
         {/* Description */}
         <p
-          className="font-sans text-base leading-relaxed max-w-[380px] mx-auto mb-10"
+          className="font-sans text-base leading-relaxed max-w-[380px] mx-auto mb-6"
           style={{ color: "#5C5C5C" }}
         >
           You meet all project requirements. Click below to access the beta.
         </p>
+
+        {/* Requirements Details */}
+        <div className="bg-green-50 border border-green-200 rounded-xl p-5 mb-8 text-left">
+          <h3 className="font-sans text-sm font-semibold text-green-900 mb-3">
+            Your Profile Details
+          </h3>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+              <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+              <span className="text-green-900">
+                <span className="font-medium">Score:</span> {score} / {requiredScore} required
+              </span>
+            </div>
+
+            {requiredVouches > 0 && (
+              <div className="flex items-center gap-2 text-sm">
+                <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+                <span className="text-green-900">
+                  <span className="font-medium">Vouches:</span> {vouches} / {requiredVouches} required
+                </span>
+              </div>
+            )}
+
+            {requiresPositiveReviews && (
+              <div className="flex items-center gap-2 text-sm">
+                <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+                <span className="text-green-900">
+                  <span className="font-medium">Reviews:</span> {positiveReviews} positive, {negativeReviews} negative (balance: +{reviewBalance})
+                </span>
+              </div>
+            )}
+
+            {requiredAccountAge > 0 && (
+              <div className="flex items-center gap-2 text-sm">
+                <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+                <span className="text-green-900">
+                  <span className="font-medium">Account Age:</span> {accountAge} days / {requiredAccountAge} required
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Primary Button */}
         <a
