@@ -9,6 +9,21 @@ const stats = [
   { value: 3.3, label: "TVL", sublabel: "Total value locked", suffix: "m" },
 ]
 
+const tooltips = [
+  {
+    title: "37,000+ Profiles",
+    text: "Real users verified by\non-chain activity & reputation.\nZero fake accounts."
+  },
+  {
+    title: "640,000+ Reviews",
+    text: "The largest on-chain\nreputation database.\nYour community's voice matters."
+  },
+  {
+    title: "$3.3m+ TVL",
+    text: "Value protected by filtering\nout low-quality users.\nReputation = security."
+  }
+]
+
 const features = [
   {
     icon: "🔒",
@@ -396,6 +411,123 @@ export default function LandingHero() {
           transform: translateX(4px);
         }
 
+        /* Import handwriting font */
+        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&display=swap');
+
+        /* Stat card wrapper for tooltip positioning */
+        .stat-card-wrapper {
+          position: relative;
+          display: inline-block;
+        }
+
+        /* Tooltip styles */
+        .stat-tooltip {
+          position: absolute;
+          bottom: 120%;
+          left: 50%;
+          transform: translateX(-50%) translateY(10px);
+          z-index: 100;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+        }
+
+        .stat-card-wrapper:hover .stat-tooltip {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+
+        .tooltip-content {
+          background: rgba(139, 92, 246, 0.15);
+          backdrop-filter: blur(10px);
+          border: 2px dashed #8b5cf6;
+          border-radius: 16px;
+          padding: 16px 20px;
+          max-width: 280px;
+          box-shadow: 0 8px 32px rgba(139, 92, 246, 0.3);
+        }
+
+        .tooltip-text {
+          font-family: 'Caveat', cursive;
+          font-size: 15px;
+          color: #e0d5ff;
+          line-height: 1.6;
+          text-align: left;
+          font-weight: 600;
+        }
+
+        .tooltip-text div {
+          margin-bottom: 4px;
+        }
+
+        .tooltip-text div:last-child {
+          margin-bottom: 0;
+        }
+
+        /* Hand-drawn arrow */
+        .tooltip-arrow {
+          position: absolute;
+          bottom: -10px;
+          left: 50%;
+          transform: translateX(-50%);
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        /* Bottom tooltip (for second stat card) */
+        .stat-tooltip-bottom {
+          bottom: auto;
+          top: 120%;
+          transform: translateX(-50%) translateY(-10px);
+        }
+
+        .stat-card-wrapper:hover .stat-tooltip-bottom {
+          transform: translateX(-50%) translateY(0);
+        }
+
+        .stat-tooltip-bottom .tooltip-arrow {
+          bottom: auto;
+          top: -10px;
+          transform: translateX(-50%) rotate(180deg);
+        }
+
+        /* Footer Links */
+        .footer-links {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 20px;
+          margin-top: 60px;
+          margin-bottom: 40px;
+          flex-wrap: wrap;
+        }
+
+        .footer-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          padding: 14px 28px;
+          background: rgba(139, 92, 246, 0.1);
+          border: 1.5px solid rgba(139, 92, 246, 0.3);
+          border-radius: 14px;
+          color: #a78bfa;
+          font-size: 15px;
+          font-weight: 600;
+          text-decoration: none;
+          transition: all 0.3s ease;
+          cursor: pointer;
+        }
+
+        .footer-link:hover {
+          background: rgba(139, 92, 246, 0.2);
+          border-color: rgba(139, 92, 246, 0.5);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+        }
+
+        .footer-link svg {
+          flex-shrink: 0;
+        }
+
         .stats {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -679,6 +811,10 @@ export default function LandingHero() {
           .stat-number {
             font-size: 48px;
           }
+          /* Hide tooltips on mobile */
+          .stat-tooltip {
+            display: none;
+          }
           .btn-primary {
             padding: 18px 40px;
             font-size: 17px;
@@ -706,6 +842,20 @@ export default function LandingHero() {
             width: 100%;
             justify-content: center;
             padding: 18px 32px;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .footer-links {
+            flex-direction: column;
+            gap: 12px;
+            padding: 0 20px;
+          }
+
+          .footer-link {
+            width: 100%;
+            justify-content: center;
+            max-width: 300px;
           }
         }
       `}</style>
@@ -755,28 +905,44 @@ export default function LandingHero() {
 
         <div className="stats" ref={statsRef}>
           {stats.map((stat, index) => (
-            <div key={index} className="stat-card">
-              <div className="stat-card-content">
-                <div className="stat-icon">
-                  {index === 0 && (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                    </svg>
-                  )}
-                  {index === 1 && (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-                    </svg>
-                  )}
-                  {index === 2 && (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                  )}
+            <div key={index} className="stat-card-wrapper">
+              <div className="stat-card">
+                <div className="stat-card-content">
+                  <div className="stat-icon">
+                    {index === 0 && (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                      </svg>
+                    )}
+                    {index === 1 && (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                      </svg>
+                    )}
+                    {index === 2 && (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                      </svg>
+                    )}
+                  </div>
+                  <span className="stat-number" data-target={stat.value} data-suffix={stat.suffix}>0</span>
+                  <span className="stat-label">{stat.label}</span>
+                  <span className="stat-sublabel">{stat.sublabel}</span>
                 </div>
-                <span className="stat-number" data-target={stat.value} data-suffix={stat.suffix}>0</span>
-                <span className="stat-label">{stat.label}</span>
-                <span className="stat-sublabel">{stat.sublabel}</span>
+              </div>
+
+              {/* Tooltip */}
+              <div className={`stat-tooltip ${index === 1 ? 'stat-tooltip-bottom' : ''}`}>
+                <div className="tooltip-content">
+                  <div className="tooltip-text">
+                    {tooltips[index].text.split('\n').map((line, i) => (
+                      <div key={i}>{line}</div>
+                    ))}
+                  </div>
+                </div>
+                <svg className="tooltip-arrow" width="20" height="12" viewBox="0 0 20 12">
+                  <path d="M10 12 Q 8 8, 0 0 L 20 0 Q 12 8, 10 12" fill="rgba(139, 92, 246, 0.15)" stroke="#8b5cf6" strokeWidth="2"/>
+                </svg>
               </div>
             </div>
           ))}
@@ -793,6 +959,45 @@ export default function LandingHero() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Footer Links */}
+        <div className="footer-links">
+          <a
+            href="https://www.ethos.network/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-link"
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+            Ethos Network
+          </a>
+
+          <a
+            href="https://x.com/ethos_network"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-link"
+          >
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+            X
+          </a>
+
+          <a
+            href="https://discord.com/invite/trust-ethos"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-link"
+          >
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z"/>
+            </svg>
+            Discord
+          </a>
         </div>
       </div>
     </>

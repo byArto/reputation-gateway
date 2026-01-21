@@ -78,7 +78,7 @@ export default function NotEligibleView({
         </div>
 
         <h1 className="text-5xl font-black bg-gradient-to-r from-white via-[#ef4444] to-[#f97316] bg-clip-text text-transparent mb-3">
-          Not Eligible Yet
+          Not Eligible
         </h1>
 
         <p className="text-lg text-[#cbd5e1] font-semibold mb-2">
