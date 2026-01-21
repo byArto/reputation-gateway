@@ -3,7 +3,7 @@ import { sql } from "@vercel/postgres"
 /**
  * Migration: Add benefits column to projects table
  *
- * This adds an optional JSONB column to store beta tester benefits
+ * This adds an optional TEXT column to store beta tester benefits
  */
 export async function addBenefitsColumn() {
   try {
@@ -11,7 +11,7 @@ export async function addBenefitsColumn() {
 
     await sql`
       ALTER TABLE projects
-      ADD COLUMN IF NOT EXISTS benefits JSONB
+      ADD COLUMN IF NOT EXISTS benefits TEXT
     `
 
     console.log("✅ Benefits column added successfully!")

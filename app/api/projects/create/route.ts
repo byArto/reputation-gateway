@@ -62,35 +62,11 @@ export async function POST(request: Request) {
     }
 
     // Validate benefits if provided
-    if (benefits) {
-      if (!Array.isArray(benefits)) {
-        return NextResponse.json(
-          { error: "benefits must be an array" },
-          { status: 400 }
-        )
-      }
-
-      if (benefits.length > 5) {
-        return NextResponse.json(
-          { error: "Maximum 5 benefits allowed" },
-          { status: 400 }
-        )
-      }
-
-      for (const benefit of benefits) {
-        if (!benefit.emoji || !benefit.text || typeof benefit.text !== 'string') {
-          return NextResponse.json(
-            { error: "Each benefit must have emoji and text" },
-            { status: 400 }
-          )
-        }
-        if (benefit.text.length > 60) {
-          return NextResponse.json(
-            { error: "Benefit text must be 60 characters or less" },
-            { status: 400 }
-          )
-        }
-      }
+    if (benefits && typeof benefits !== 'string') {
+      return NextResponse.json(
+        { error: "benefits must be a string" },
+        { status: 400 }
+      )
     }
 
     // Create project

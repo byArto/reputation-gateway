@@ -16,10 +16,7 @@ export interface Project {
   manual_review: boolean
   destination_url: string
   destination_type: "discord" | "beta"
-  benefits?: Array<{
-    emoji: string
-    text: string
-  }>
+  benefits?: string
   created_at: Date
 }
 
@@ -49,11 +46,11 @@ export async function createProject(data: {
   manualReview: boolean
   destinationUrl: string
   destinationType: "discord" | "beta"
-  benefits?: Array<{ emoji: string; text: string }>
+  benefits?: string
 }) {
   const result = await sql`
     INSERT INTO projects (name, slug, criteria, manual_review, destination_url, destination_type, benefits)
-    VALUES (${data.name}, ${data.slug}, ${JSON.stringify(data.criteria)}, ${data.manualReview}, ${data.destinationUrl}, ${data.destinationType}, ${data.benefits ? JSON.stringify(data.benefits) : null})
+    VALUES (${data.name}, ${data.slug}, ${JSON.stringify(data.criteria)}, ${data.manualReview}, ${data.destinationUrl}, ${data.destinationType}, ${data.benefits || null})
     RETURNING *
   `
   return result.rows[0] as Project

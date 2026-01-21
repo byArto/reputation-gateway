@@ -21,24 +21,16 @@ interface ConfigureFormProps {
   onBack: () => void
 }
 
-interface Benefit {
-  emoji: string
-  text: string
-}
-
 export default function ConfigureForm({ filterSettings, onBack }: ConfigureFormProps) {
   const router = useRouter()
   const [projectName, setProjectName] = useState("")
   const [pageSlug, setPageSlug] = useState("")
   const [destinationType, setDestinationType] = useState<"discord" | "beta">("beta")
   const [destinationUrl, setDestinationUrl] = useState("")
-  const [benefits, setBenefits] = useState<Benefit[]>([])
+  const [benefits, setBenefits] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
   const [isMounted, setIsMounted] = useState(false)
-
-  const maxBenefits = 5
-  const emojis = ['🎁', '💎', '🏆', '⭐', '🚀', '💰', '🎯', '✨', '🔥', '⚡']
 
   useEffect(() => {
     setIsMounted(true)
@@ -72,27 +64,6 @@ export default function ConfigureForm({ filterSettings, onBack }: ConfigureFormP
   const handleSlugChange = (value: string) => {
     const sanitized = value.toLowerCase().replace(/[^a-z0-9-]/g, "")
     setPageSlug(sanitized)
-  }
-
-  const addBenefit = () => {
-    if (benefits.length >= maxBenefits) return
-    setBenefits([...benefits, { emoji: '🎁', text: '' }])
-  }
-
-  const removeBenefit = (index: number) => {
-    setBenefits(benefits.filter((_, i) => i !== index))
-  }
-
-  const updateBenefitEmoji = (index: number, emoji: string) => {
-    const updated = [...benefits]
-    updated[index].emoji = emoji
-    setBenefits(updated)
-  }
-
-  const updateBenefitText = (index: number, text: string) => {
-    const updated = [...benefits]
-    updated[index].text = text
-    setBenefits(updated)
   }
 
   const handleSubmit = async () => {
@@ -143,7 +114,7 @@ export default function ConfigureForm({ filterSettings, onBack }: ConfigureFormP
           manual_review: filterSettings.customSettings?.manualReview || false,
           destination_url: destinationUrl,
           destination_type: destinationType,
-          benefits: benefits.filter(b => b.text.trim() !== '')
+          benefits: benefits.trim() || undefined
         })
       })
 
@@ -350,51 +321,16 @@ export default function ConfigureForm({ filterSettings, onBack }: ConfigureFormP
               <label className="block text-[16px] font-[700] text-[#e0d5ff] mb-3">
                 Beta Tester Benefits (Optional)
               </label>
-              <p className="text-[13px] text-[#94a3b8] mb-4">
+              <p className="text-[13px] text-[#94a3b8] mb-2">
                 Tell testers what they&apos;ll get for participating
               </p>
-
-              <div className="space-y-3 mb-4">
-                {benefits.map((benefit, index) => (
-                  <div key={index} className="flex gap-3 items-center">
-                    <select
-                      value={benefit.emoji}
-                      onChange={(e) => updateBenefitEmoji(index, e.target.value)}
-                      className="w-[60px] px-2 py-[14px] bg-[#8b5cf6]/8 border-2 border-[#8b5cf6]/30 rounded-[12px] text-white text-[20px] cursor-pointer text-center transition-all hover:border-[#8b5cf6]/50 hover:bg-[#8b5cf6]/12 focus:outline-none focus:border-[#8b5cf6] focus:bg-[#8b5cf6]/15"
-                    >
-                      {emojis.map((emoji) => (
-                        <option key={emoji} value={emoji}>
-                          {emoji}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="text"
-                      value={benefit.text}
-                      onChange={(e) => updateBenefitText(index, e.target.value)}
-                      placeholder="e.g., Early access to platform"
-                      maxLength={60}
-                      className="flex-1 px-[18px] py-[14px] bg-[#8b5cf6]/8 border-2 border-[#8b5cf6]/30 rounded-[12px] text-white text-[15px] transition-all placeholder:text-[#64748b] hover:border-[#8b5cf6]/50 hover:bg-[#8b5cf6]/12 focus:outline-none focus:border-[#8b5cf6] focus:bg-[#8b5cf6]/15"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeBenefit(index)}
-                      className="w-[36px] h-[36px] bg-[#ef4444]/10 border border-[#ef4444]/30 rounded-[8px] text-[#ef4444] cursor-pointer transition-all hover:bg-[#ef4444]/20 flex items-center justify-center"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={addBenefit}
-                disabled={benefits.length >= maxBenefits}
-                className="px-5 py-3 bg-[#8b5cf6]/10 border border-[#8b5cf6]/30 rounded-[12px] text-[#a78bfa] text-[14px] font-[600] cursor-pointer transition-all hover:bg-[#8b5cf6]/20 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                + Add Benefit <span className="text-[#64748b]">({benefits.length}/{maxBenefits})</span>
-              </button>
+              <textarea
+                value={benefits}
+                onChange={(e) => setBenefits(e.target.value)}
+                placeholder="e.g., Early access to platform, Premium features for free, Beta tester badge..."
+                rows={4}
+                className="w-full px-5 py-4 bg-[#8b5cf6]/8 border-2 border-[#8b5cf6]/30 rounded-[14px] text-white text-[15px] transition-all placeholder:text-[#64748b] hover:border-[#8b5cf6]/50 hover:bg-[#8b5cf6]/12 focus:outline-none focus:border-[#8b5cf6] focus:bg-[#8b5cf6]/15 focus:shadow-[0_0_0_4px_rgba(139,92,246,0.1)] resize-none"
+              />
             </div>
 
             {/* Create Button */}
