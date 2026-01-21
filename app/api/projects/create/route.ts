@@ -6,7 +6,7 @@ export async function POST(request: Request) {
     const body = await request.json()
 
     // Validate required fields
-    const { name, slug, criteria, manual_review, destination_url, destination_type } = body
+    const { name, slug, criteria, manual_review, destination_url, destination_type, benefits } = body
 
     if (!name || !slug || !criteria || !destination_url || !destination_type) {
       return NextResponse.json(
@@ -61,6 +61,38 @@ export async function POST(request: Request) {
       )
     }
 
+    // Validate benefits if provided
+    if (benefits) {
+      if (!Array.isArray(benefits)) {
+        return NextResponse.json(
+          { error: "benefits must be an array" },
+          { status: 400 }
+        )
+      }
+
+      if (benefits.length > 5) {
+        return NextResponse.json(
+          { error: "Maximum 5 benefits allowed" },
+          { status: 400 }
+        )
+      }
+
+      for (const benefit of benefits) {
+        if (!benefit.emoji || !benefit.text || typeof benefit.text !== 'string') {
+          return NextResponse.json(
+            { error: "Each benefit must have emoji and text" },
+            { status: 400 }
+          )
+        }
+        if (benefit.text.length > 60) {
+          return NextResponse.json(
+            { error: "Benefit text must be 60 characters or less" },
+            { status: 400 }
+          )
+        }
+      }
+    }
+
     // Create project
     const project = await createProject({
       name,
@@ -74,6 +106,7 @@ export async function POST(request: Request) {
       manualReview: manual_review ?? false,
       destinationUrl: destination_url,
       destinationType: destination_type,
+      benefits: benefits || undefined,
     })
 
     // Get the base URL for the response
