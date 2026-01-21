@@ -68,12 +68,27 @@ export default function AccessPage({
 
       if (!authenticated) {
         // Not authenticated - open Privy login modal
-        setAccessState("checking")
         await login()
+        // After successful login, Privy will update authenticated=true
+        // User needs to click again to extract wallet address
         return
       }
 
-      // Already authenticated - proceed to check eligibility
+      // Already authenticated - get wallet address and show it
+      const externalWallet = user?.linkedAccounts?.find(
+        (account) => account.type === 'wallet'
+      )
+
+      const walletAddr = externalWallet?.address
+
+      if (walletAddr && !walletAddress) {
+        // Set walletAddress immediately to show Change Wallet button
+        setWalletAddress(walletAddr)
+        // Stay on ConnectWalletView so user can see the Connected Wallet block
+        return
+      }
+
+      // User clicked "Check My Access" - start eligibility check
       setAccessState("checking")
       await checkEligibility()
     } catch (error) {
@@ -148,13 +163,6 @@ export default function AccessPage({
       setAccessState("connect")
     }
   }
-
-  // Auto-check eligibility after authentication
-  useEffect(() => {
-    if (ready && authenticated && accessState === "checking") {
-      checkEligibility()
-    }
-  }, [ready, authenticated, accessState])
 
   const handleChangeWallet = async () => {
     try {
