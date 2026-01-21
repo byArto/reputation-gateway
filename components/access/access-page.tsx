@@ -65,14 +65,16 @@ export default function AccessPage({
   const handleConnect = async () => {
     try {
       setError(null)
-      setAccessState("checking")
 
       if (!authenticated) {
+        // Not authenticated - open Privy login modal
+        setAccessState("checking")
         await login()
         return
       }
 
-      // If already authenticated, proceed to check eligibility
+      // Already authenticated - proceed to check eligibility
+      setAccessState("checking")
       await checkEligibility()
     } catch (error) {
       console.error("Auth error:", error)
@@ -156,11 +158,23 @@ export default function AccessPage({
 
   const handleChangeWallet = async () => {
     try {
+      // Logout first to clear current session
       await logout()
+
+      // Reset state
       setAccessState("connect")
       setWalletAddress(null)
       setUserStats(null)
       setError(null)
+
+      // Wait a bit for logout to complete, then open login modal
+      setTimeout(async () => {
+        try {
+          await login()
+        } catch (error) {
+          console.error("Login error after logout:", error)
+        }
+      }, 500)
     } catch (error) {
       console.error("Logout error:", error)
     }
