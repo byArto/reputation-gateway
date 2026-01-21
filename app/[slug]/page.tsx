@@ -1,4 +1,6 @@
-import TesterView from "@/components/tester-view"
+import { getProjectBySlug } from "@/lib/db"
+import { notFound } from "next/navigation"
+import AccessPage from "@/components/access/access-page"
 
 interface TesterPageProps {
   params: Promise<{
@@ -9,22 +11,25 @@ interface TesterPageProps {
 export default async function TesterPage({ params }: TesterPageProps) {
   const { slug } = await params
 
-  // Convert slug to display name (e.g., "my-project" -> "My Project")
-  const projectName = slug
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ")
+  // Fetch project data from database
+  const project = await getProjectBySlug(slug)
+
+  if (!project) {
+    notFound()
+  }
 
   return (
-    <TesterView
-      projectName={projectName}
+    <AccessPage
+      projectName={project.name}
       slug={slug}
-      requirements={[
-        "Ethos Score minimum 1400",
-        "At least 1 vouch (older than 24h)",
-        "Positive review balance",
-        "Account age: 7+ days",
-      ]}
+      requirements={{
+        minScore: project.criteria.minScore,
+        minVouches: project.criteria.minVouches,
+        positiveReviews: project.criteria.positiveReviews,
+        minAccountAge: project.criteria.minAccountAge
+      }}
+      benefits={project.benefits}
+      destinationUrl={project.destination_url}
     />
   )
 }
