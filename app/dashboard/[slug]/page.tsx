@@ -1,9 +1,15 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
-import DashboardStats from "@/components/dashboard-stats"
-import ApplicationCard from "@/components/application-card"
+import { useParams, useRouter } from "next/navigation"
+import { BlockchainGrid, GlowOrbs } from "@/components/dashboard/background"
+import DashboardHeader from "@/components/dashboard/header"
+import URLShareBox from "@/components/dashboard/url-share-box"
+import StatsGrid from "@/components/dashboard/stats-grid"
+import LeftSidebar from "@/components/dashboard/left-sidebar"
+import MainContent from "@/components/dashboard/main-content"
+import RightSidebar from "@/components/dashboard/right-sidebar"
+import SettingsModal from "@/components/dashboard/settings-modal"
 
 interface Application {
   id: string
@@ -11,38 +17,55 @@ interface Application {
   ethos_profile_id: number
   username: string
   score: number
+  vouches: number
+  positive_reviews: number
+  negative_reviews: number
+  account_age: number
   status: "accepted" | "rejected" | "pending"
   rejection_reason: string | null
   created_at: string
 }
 
+interface Project {
+  id: string
+  name: string
+  slug: string
+  criteria: {
+    minScore: number
+    minVouches: number
+    positiveReviews: boolean
+    minAccountAge: number
+  }
+  manual_review: boolean
+  destination_url: string
+  destination_type: string
+  created_at: string
+}
+
 interface ProjectStats {
-  totalApplications: number
-  pendingCount: number
-  acceptedCount: number
-  rejectedCount: number
-  acceptedPercent: number
-  rejectedPercent: number
-  avgScore: number
-  avgAcceptedScore: number
-  last24hCount: number
+  total_applications: number
+  last_24h: number
+  accepted: number
+  accepted_percent: number
+  rejected: number
+  rejected_percent: number
+  pending: number
+  avg_score: number
+  avg_accepted_score: number
 }
 
 export default function DashboardPage() {
   const params = useParams()
+  const router = useRouter()
   const slug = params.slug as string
 
+  const [project, setProject] = useState<Project | null>(null)
   const [stats, setStats] = useState<ProjectStats | null>(null)
   const [applications, setApplications] = useState<Application[]>([])
-  const [projectId, setProjectId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  // Convert slug to display name
-  const projectName = slug
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ")
+  const [selectedApps, setSelectedApps] = useState<Set<string>>(new Set())
+  const [showSettingsModal, setShowSettingsModal] = useState(false)
 
   // Load project and stats
   useEffect(() => {
@@ -57,8 +80,8 @@ export default function DashboardPage() {
         }
 
         const projectData = await projectResponse.json()
-        setProjectId(projectData.project.id)
-        setStats(projectData.stats)
+        setProject(projectData.project)
+        setStats(projectData.project.stats)
 
         // Fetch applications
         const appsResponse = await fetch(
@@ -105,11 +128,9 @@ export default function DashboardPage() {
       )
 
       // Reload stats
-      if (projectId) {
-        const projectResponse = await fetch(`/api/projects/${slug}`)
-        const projectData = await projectResponse.json()
-        setStats(projectData.stats)
-      }
+      const projectResponse = await fetch(`/api/projects/${slug}`)
+      const projectData = await projectResponse.json()
+      setStats(projectData.project.stats)
     } catch (err) {
       console.error("Error approving application:", err)
       alert("Failed to approve application")
@@ -145,51 +166,83 @@ export default function DashboardPage() {
       )
 
       // Reload stats
-      if (projectId) {
-        const projectResponse = await fetch(`/api/projects/${slug}`)
-        const projectData = await projectResponse.json()
-        setStats(projectData.stats)
-      }
+      const projectResponse = await fetch(`/api/projects/${slug}`)
+      const projectData = await projectResponse.json()
+      setStats(projectData.project.stats)
     } catch (err) {
       console.error("Error rejecting application:", err)
       alert("Failed to reject application")
     }
   }
 
-  // Format timestamp to relative time
-  const formatTimestamp = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMins / 60)
-    const diffDays = Math.floor(diffHours / 24)
+  const handleSelectApp = (id: string, selected: boolean) => {
+    setSelectedApps((prev) => {
+      const newSet = new Set(prev)
+      if (selected) {
+        newSet.add(id)
+      } else {
+        newSet.delete(id)
+      }
+      return newSet
+    })
+  }
 
-    if (diffMins < 60) {
-      return `${diffMins} ${diffMins === 1 ? "minute" : "minutes"} ago`
-    } else if (diffHours < 24) {
-      return `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      setSelectedApps(new Set(applications.map((app) => app.id)))
     } else {
-      return `${diffDays} ${diffDays === 1 ? "day" : "days"} ago`
+      setSelectedApps(new Set())
+    }
+  }
+
+  const handleSaveSettings = async (settings: {
+    name: string
+    slug: string
+    minScore: number
+  }) => {
+    try {
+      // TODO: Implement PATCH /api/projects/[slug] endpoint
+      console.log("Save settings:", settings)
+
+      // For now, just update local state
+      if (project) {
+        setProject({
+          ...project,
+          name: settings.name,
+          slug: settings.slug,
+          criteria: {
+            ...project.criteria,
+            minScore: settings.minScore,
+          },
+        })
+      }
+
+      alert("Settings saved successfully!")
+    } catch (err) {
+      console.error("Error saving settings:", err)
+      alert("Failed to save settings")
     }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#EFE9DF] flex items-center justify-center">
-        <p className="font-sans text-[#5C5C5C]">Loading dashboard...</p>
+      <div className="min-h-screen bg-gradient-to-br from-[#0a0e27] via-[#1a1443] via-[#2d1b69] via-[#1e3a5f] to-[#0f2744] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[rgba(139,92,246,0.3)] border-t-[#8b5cf6] rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-[#e0d5ff] text-lg">Loading dashboard...</p>
+        </div>
       </div>
     )
   }
 
-  if (error) {
+  if (error || !project || !stats) {
     return (
-      <div className="min-h-screen bg-[#EFE9DF] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-[#0a0e27] via-[#1a1443] via-[#2d1b69] via-[#1e3a5f] to-[#0f2744] flex items-center justify-center">
         <div className="text-center">
-          <p className="font-sans text-red-600 mb-4">{error}</p>
+          <p className="text-red-400 text-lg mb-4">{error || "Failed to load project"}</p>
           <button
             onClick={() => window.location.reload()}
-            className="font-sans text-[#1E3A5F] hover:underline"
+            className="px-6 py-3 bg-gradient-to-r from-[#8b5cf6] to-[#06b6d4] text-white font-bold rounded-xl hover:shadow-lg transition-all"
           >
             Retry
           </button>
@@ -199,89 +252,68 @@ export default function DashboardPage() {
   }
 
   // Get full page URL
-  const pageUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/${slug}`
-    : `https://yourdomain.com/${slug}`
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(pageUrl)
-    alert('Page URL copied to clipboard!')
-  }
+  const pageUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/${slug}`
+      : `https://yourdomain.com/${slug}`
 
   return (
-    <div className="min-h-screen bg-[#EFE9DF]">
-      {/* Stats Section */}
-      {stats && (
-        <div className="pb-8">
-          <DashboardStats
-            totalApplications={stats.totalApplications}
-            last24h={stats.last24hCount}
-            accepted={stats.acceptedCount}
-            acceptedPercent={stats.acceptedPercent}
-            rejected={stats.rejectedCount}
-            rejectedPercent={stats.rejectedPercent}
-            avgScore={stats.avgScore}
-            avgAcceptedScore={stats.avgAcceptedScore}
-          />
-        </div>
-      )}
-
-      {/* Applications List Section */}
-      <div className="max-w-[1000px] mx-auto px-4 pb-16">
-        {/* Page URL Section */}
-        <div className="bg-white border border-[#E5E0D8] rounded-xl p-6 mb-6">
-          <h3 className="font-sans text-sm font-medium text-[#5C5C5C] mb-2">
-            Share this URL with testers:
-          </h3>
-          <div className="flex items-center gap-3">
-            <input
-              type="text"
-              value={pageUrl}
-              readOnly
-              className="flex-1 px-4 py-3 bg-[#F8F6F3] border border-[#E5E0D8] rounded-lg font-mono text-sm text-[#1E3A5F] focus:outline-none"
-            />
-            <button
-              onClick={copyToClipboard}
-              className="px-6 py-3 bg-[#1E3A5F] text-white font-sans font-medium rounded-lg hover:bg-[#152d47] transition-colors"
-            >
-              Copy
-            </button>
-          </div>
-        </div>
-
-        <div className="mb-6">
-          <h2 className="font-serif text-3xl text-[#1A1A1A] mb-2">
-            Recent Applications
-          </h2>
-          <p className="font-sans text-[15px] text-[#5C5C5C]">
-            Project: {projectName}
-          </p>
-        </div>
-
-        {applications.length === 0 ? (
-          <div className="bg-white border border-[#E5E0D8] rounded-xl p-8 text-center">
-            <p className="font-sans text-[#5C5C5C]">No applications yet</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {applications.map((app) => (
-              <ApplicationCard
-                key={app.id}
-                username={app.username}
-                score={app.score}
-                vouches={0}
-                accountAge={0}
-                timestamp={formatTimestamp(app.created_at)}
-                status={app.status}
-                ethosProfileUrl={`https://ethos.network/profile/${app.ethos_profile_id}`}
-                showActions={app.status === "pending"}
-                onApprove={() => handleApprove(app.id)}
-                onReject={() => handleReject(app.id)}
-              />
-            ))}
-          </div>
-        )}
+    <>
+      {/* Background */}
+      <div className="fixed inset-0 bg-gradient-to-br from-[#0a0e27] via-[#1a1443] via-[#2d1b69] via-[#1e3a5f] to-[#0f2744]">
+        <BlockchainGrid />
+        <GlowOrbs />
       </div>
-    </div>
+
+      {/* Content */}
+      <div className="relative z-10 min-h-screen">
+        <div className="max-w-[1600px] mx-auto px-6 py-8">
+          {/* Header */}
+          <DashboardHeader
+            projectName={project.name}
+            onSettingsClick={() => setShowSettingsModal(true)}
+          />
+
+          {/* URL Share Box */}
+          <div className="mt-8 mb-8">
+            <URLShareBox url={pageUrl} />
+          </div>
+
+          {/* Stats Grid */}
+          <div className="mb-8">
+            <StatsGrid stats={stats} />
+          </div>
+
+          {/* 3-Column Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_300px] gap-6">
+            {/* Left Sidebar */}
+            <LeftSidebar applications={applications} />
+
+            {/* Main Content */}
+            <MainContent
+              applications={applications}
+              onApprove={handleApprove}
+              onReject={handleReject}
+              selectedIds={selectedApps}
+              onSelectApp={handleSelectApp}
+              onSelectAll={handleSelectAll}
+            />
+
+            {/* Right Sidebar */}
+            <RightSidebar applications={applications} project={project} />
+          </div>
+        </div>
+      </div>
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <SettingsModal
+          isOpen={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+          project={project}
+          onSave={handleSaveSettings}
+        />
+      )}
+    </>
   )
 }
