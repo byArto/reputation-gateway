@@ -126,21 +126,21 @@ export default function FilterSelection({ onContinue }: FilterSelectionProps) {
   return (
     <>
       <style jsx global>{`
-        .flip-card { perspective: 1000px; height: 380px; cursor: pointer; transition: transform 0.3s ease; }
+        .flip-card { perspective: 1000px; height: 400px; cursor: pointer; transition: transform 0.3s ease; }
         .flip-card.selected { transform: scale(1.05); }
         .flip-card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
         .flip-card:hover .flip-card-inner { transform: rotateY(180deg); }
         .flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 24px; padding: 28px 20px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%); border: 1.5px solid rgba(139, 92, 246, 0.2); backdrop-filter: blur(20px); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); transition: all 0.3s ease; }
         .flip-card.selected .flip-card-front, .flip-card.selected .flip-card-back { border: 2px solid #8b5cf6; box-shadow: 0 0 40px rgba(139, 92, 246, 0.6), 0 20px 60px rgba(139, 92, 246, 0.4); }
         .flip-card-back { transform: rotateY(180deg); background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(6, 182, 212, 0.05) 100%); border-color: rgba(139, 92, 246, 0.4); }
-        .filter-icon { width: 48px; height: 48px; margin: 0 auto 16px; padding: 12px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(6, 182, 212, 0.2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .filter-icon { width: 48px; height: 48px; margin: 0 auto 12px; padding: 12px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(6, 182, 212, 0.2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
         .filter-icon svg { width: 24px; height: 24px; stroke: #a78bfa; fill: none; stroke-width: 2; }
         .filter-name { font-size: 28px; font-weight: 800; margin-bottom: 6px; text-align: center; background: linear-gradient(135deg, #ffffff 0%, #a78bfa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .filter-subtitle { font-size: 14px; color: #94a3b8; text-align: center; margin-bottom: 20px; }
+        .filter-subtitle { font-size: 14px; color: #94a3b8; text-align: center; margin-bottom: 16px; }
         .pass-rate { font-size: 52px; font-weight: 900; text-align: center; margin-bottom: 6px; background: linear-gradient(135deg, #ffffff 0%, #a78bfa 50%, #06b6d4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; }
-        .pass-label { font-size: 14px; color: #94a3b8; text-align: center; margin-bottom: 24px; text-transform: uppercase; letter-spacing: 1px; }
+        .pass-label { font-size: 14px; color: #94a3b8; text-align: center; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
         .criteria-list { list-style: none; }
-        .criteria-list li { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 12px; color: #cbd5e1; border-bottom: 1px solid rgba(139, 92, 246, 0.1); }
+        .criteria-list li { display: flex; align-items: center; gap: 10px; padding: 4px 0; font-size: 12px; color: #cbd5e1; border-bottom: 1px solid rgba(139, 92, 246, 0.1); }
         .criteria-list li:last-child { border-bottom: none; }
         .check-icon { width: 16px; height: 16px; color: #8b5cf6; flex-shrink: 0; }
         .back-content { height: 100%; display: flex; flex-direction: column; }
@@ -162,7 +162,7 @@ export default function FilterSelection({ onContinue }: FilterSelectionProps) {
         .lock-note { background: rgba(139, 92, 246, 0.1); color: #a78bfa; }
         @media (max-width: 1024px) {
           .filter-cards { grid-template-columns: 1fr; max-width: 500px; margin: 0 auto 40px; }
-          .flip-card { height: 380px; }
+          .flip-card { height: 400px; }
         }
       `}</style>
 
