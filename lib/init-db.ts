@@ -21,6 +21,7 @@ export async function initDatabase() {
         manual_review BOOLEAN NOT NULL DEFAULT false,
         destination_url TEXT NOT NULL,
         destination_type TEXT NOT NULL CHECK (destination_type IN ('discord', 'beta')),
+        benefits TEXT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       )
     `
