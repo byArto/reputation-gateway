@@ -10,6 +10,9 @@ interface ConnectWalletViewProps {
   }>
   benefits?: string
   onConnect: () => void
+  walletAddress?: string | null
+  authenticated?: boolean
+  onChangeWallet?: () => void
 }
 
 export default function ConnectWalletView({
@@ -17,7 +20,10 @@ export default function ConnectWalletView({
   projectDescription = "Join our exclusive beta program and get early access to cutting-edge features. Connect your wallet to verify your reputation and start testing.",
   requirements,
   benefits,
-  onConnect
+  onConnect,
+  walletAddress,
+  authenticated,
+  onChangeWallet
 }: ConnectWalletViewProps) {
   // Parse benefits if it's a string (from textarea)
   const benefitsList = benefits
@@ -49,6 +55,31 @@ export default function ConnectWalletView({
           {projectDescription}
         </p>
       </div>
+
+      {/* Connected Wallet Info */}
+      {authenticated && walletAddress && (
+        <div className="flex items-center justify-between gap-3 p-4 px-5 bg-[rgba(139,92,246,0.1)] border border-[rgba(139,92,246,0.3)] rounded-2xl mb-6">
+          <div className="flex items-center gap-3">
+            <svg className="w-6 h-6 text-[#a78bfa] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <div>
+              <div className="text-xs text-[#94a3b8] font-medium">Connected Wallet</div>
+              <div className="text-sm text-[#e0d5ff] font-bold font-mono">
+                {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+              </div>
+            </div>
+          </div>
+          {onChangeWallet && (
+            <button
+              onClick={onChangeWallet}
+              className="px-4 py-2 bg-[rgba(139,92,246,0.2)] border border-[rgba(139,92,246,0.4)] rounded-xl text-[#a78bfa] text-sm font-semibold transition-all hover:bg-[rgba(139,92,246,0.3)] hover:translate-y-[-1px]"
+            >
+              Change Wallet
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Info Banner */}
       <div className="flex items-center gap-3 p-4 px-5 bg-[rgba(6,182,212,0.1)] border border-[rgba(6,182,212,0.3)] rounded-2xl mb-6">
@@ -117,7 +148,7 @@ export default function ConnectWalletView({
         onClick={onConnect}
         className="w-full px-8 py-[18px] bg-gradient-to-r from-[#8b5cf6] to-[#06b6d4] border-none rounded-2xl text-white text-[17px] font-bold cursor-pointer transition-all shadow-[0_8px_32px_rgba(139,92,246,0.4)] hover:translate-y-[-2px] hover:shadow-[0_12px_40px_rgba(139,92,246,0.6)] mb-4"
       >
-        Connect Wallet
+        {authenticated && walletAddress ? 'Check My Access' : 'Connect Wallet'}
       </button>
 
       <div className="text-center text-[13px] text-[#64748b] flex items-center justify-center gap-1.5">

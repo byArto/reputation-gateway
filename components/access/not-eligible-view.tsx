@@ -16,6 +16,7 @@ interface NotEligibleViewProps {
     minAccountAge: number
   }
   ethosProfileUrl: string
+  onChangeWallet?: () => void
 }
 
 export default function NotEligibleView({
@@ -23,7 +24,8 @@ export default function NotEligibleView({
   username,
   userStats,
   requirements,
-  ethosProfileUrl
+  ethosProfileUrl,
+  onChangeWallet
 }: NotEligibleViewProps) {
   // Calculate pass/fail for each requirement
   const checks = [
@@ -225,6 +227,15 @@ export default function NotEligibleView({
         >
           Check Again
         </button>
+
+        {onChangeWallet && (
+          <button
+            onClick={onChangeWallet}
+            className="w-full px-8 py-[16px] bg-[rgba(139,92,246,0.05)] border-2 border-[rgba(139,92,246,0.2)] rounded-2xl text-[#94a3b8] text-[16px] font-bold cursor-pointer transition-all hover:border-[rgba(139,92,246,0.4)] hover:text-[#a78bfa] hover:translate-y-[-2px]"
+          >
+            Try Different Wallet
+          </button>
+        )}
       </div>
 
       {/* Footer */}

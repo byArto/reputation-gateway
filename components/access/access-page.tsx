@@ -32,10 +32,11 @@ export default function AccessPage({
   destinationUrl
 }: AccessPageProps) {
   const router = useRouter()
-  const { ready, authenticated, user, login } = usePrivy()
+  const { ready, authenticated, user, login, logout } = usePrivy()
   const [accessState, setAccessState] = useState<AccessState>("connect")
   const [userStats, setUserStats] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
+  const [walletAddress, setWalletAddress] = useState<string | null>(null)
 
   // Format requirements for display
   const requirementsList = [
@@ -105,6 +106,9 @@ export default function AccessPage({
         return
       }
 
+      // Сохранить адрес кошелька для отображения
+      setWalletAddress(walletAddress)
+
       // Check eligibility via API
       const response = await fetch("/api/auth/privy/session", {
         method: "POST",
@@ -150,6 +154,18 @@ export default function AccessPage({
     }
   }, [ready, authenticated, accessState])
 
+  const handleChangeWallet = async () => {
+    try {
+      await logout()
+      setAccessState("connect")
+      setWalletAddress(null)
+      setUserStats(null)
+      setError(null)
+    } catch (error) {
+      console.error("Logout error:", error)
+    }
+  }
+
   const handleAccessClick = () => {
     // Redirect to destination URL
     window.location.href = destinationUrl
@@ -175,6 +191,9 @@ export default function AccessPage({
           requirements={requirementsList}
           benefits={benefits}
           onConnect={handleConnect}
+          walletAddress={walletAddress}
+          authenticated={authenticated}
+          onChangeWallet={handleChangeWallet}
         />
       )}
 
@@ -211,6 +230,7 @@ export default function AccessPage({
           }}
           requirements={requirements}
           ethosProfileUrl={userStats.ethosProfileUrl}
+          onChangeWallet={handleChangeWallet}
         />
       )}
 
