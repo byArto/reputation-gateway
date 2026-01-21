@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import type { FilterPreset } from "@/lib/filters"
 import { getFilterPreset } from "@/lib/filters"
@@ -29,6 +29,11 @@ export default function ConfigureForm({ filterSettings, onBack }: ConfigureFormP
   const [destinationUrl, setDestinationUrl] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   // Get filter summary
   const getFilterSummary = () => {
@@ -168,7 +173,9 @@ export default function ConfigureForm({ filterSettings, onBack }: ConfigureFormP
         }
       `}</style>
 
-      <div className="max-w-[1400px] mx-auto animate-[fadeIn_0.6s_ease-out]" style={{ opacity: 1 }}>
+      <div
+        className={`max-w-[1400px] mx-auto transition-all duration-500 ${isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+      >
         <div className="grid grid-cols-1 lg:grid-cols-[250px_1fr_250px] gap-8 items-start">
           {/* LEFT: Filter Summary */}
           <div className="side-panel">

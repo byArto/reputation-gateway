@@ -44,7 +44,7 @@ const filters = [
     subtitle: "Balanced verification",
     passRate: "~35%",
     iconPath: "M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z",
-    criteria: ["Score ≥ 1400", "1+ vouches", "Positive reviews", "Account: 7d+"],
+    criteria: ["Score ≥ 1400", "1+ vouches", "Positive reviews", "Age: 7d+"],
     bestFor: [
       "DeFi protocols & gaming betas",
       "NFT launches & Web3 dApps",
@@ -63,7 +63,7 @@ const filters = [
     subtitle: "High-trust only",
     passRate: "~10%",
     iconPath: "M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z",
-    criteria: ["Score ≥ 1600", "2+ vouches", "Positive reviews", "Account: 30d+"],
+    criteria: ["Score ≥ 1600", "2+ vouches", "Positive reviews", "Age: 30d+"],
     bestFor: [
       "High-value incentives ($10K+ pools)",
       "Security-critical & exclusive alphas",
@@ -104,24 +104,33 @@ export default function FilterSelection({ onContinue }: FilterSelectionProps) {
   }
 
   const handleContinue = () => {
-    if (customExpanded) {
-      onContinue({
-        preset: "custom",
-        customSettings
-      })
-    } else if (selectedFilter) {
-      onContinue({ preset: selectedFilter })
+    // Add fade out animation
+    const container = document.querySelector('.filter-selection-container')
+    if (container) {
+      container.classList.add('fade-out')
     }
+
+    // Delay continue call to allow animation
+    setTimeout(() => {
+      if (customExpanded) {
+        onContinue({
+          preset: "custom",
+          customSettings
+        })
+      } else if (selectedFilter) {
+        onContinue({ preset: selectedFilter })
+      }
+    }, 400)
   }
 
   return (
     <>
       <style jsx global>{`
-        .flip-card { perspective: 1000px; height: 400px; cursor: pointer; transition: transform 0.3s ease; }
+        .flip-card { perspective: 1000px; height: 380px; cursor: pointer; transition: transform 0.3s ease; }
         .flip-card.selected { transform: scale(1.05); }
         .flip-card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
         .flip-card:hover .flip-card-inner { transform: rotateY(180deg); }
-        .flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 24px; padding: 32px 24px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%); border: 1.5px solid rgba(139, 92, 246, 0.2); backdrop-filter: blur(20px); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); transition: all 0.3s ease; }
+        .flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 24px; padding: 28px 20px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%); border: 1.5px solid rgba(139, 92, 246, 0.2); backdrop-filter: blur(20px); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); transition: all 0.3s ease; }
         .flip-card.selected .flip-card-front, .flip-card.selected .flip-card-back { border: 2px solid #8b5cf6; box-shadow: 0 0 40px rgba(139, 92, 246, 0.6), 0 20px 60px rgba(139, 92, 246, 0.4); }
         .flip-card-back { transform: rotateY(180deg); background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(6, 182, 212, 0.05) 100%); border-color: rgba(139, 92, 246, 0.4); }
         .filter-icon { width: 48px; height: 48px; margin: 0 auto 16px; padding: 12px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(6, 182, 212, 0.2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
@@ -131,7 +140,7 @@ export default function FilterSelection({ onContinue }: FilterSelectionProps) {
         .pass-rate { font-size: 52px; font-weight: 900; text-align: center; margin-bottom: 6px; background: linear-gradient(135deg, #ffffff 0%, #a78bfa 50%, #06b6d4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; }
         .pass-label { font-size: 14px; color: #94a3b8; text-align: center; margin-bottom: 24px; text-transform: uppercase; letter-spacing: 1px; }
         .criteria-list { list-style: none; }
-        .criteria-list li { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 13px; color: #cbd5e1; border-bottom: 1px solid rgba(139, 92, 246, 0.1); }
+        .criteria-list li { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 12px; color: #cbd5e1; border-bottom: 1px solid rgba(139, 92, 246, 0.1); }
         .criteria-list li:last-child { border-bottom: none; }
         .check-icon { width: 16px; height: 16px; color: #8b5cf6; flex-shrink: 0; }
         .back-content { height: 100%; display: flex; flex-direction: column; }
@@ -157,7 +166,7 @@ export default function FilterSelection({ onContinue }: FilterSelectionProps) {
         }
       `}</style>
 
-      <div className="max-w-[1200px] mx-auto">
+      <div className="filter-selection-container max-w-[1200px] mx-auto transition-opacity duration-400">
         <div className="text-center mb-[60px] animate-[fadeInUp_1s_ease-out]">
           <h1 className="text-[56px] font-[900] mb-4 bg-gradient-to-r from-white via-[#a78bfa] to-[#06b6d4] bg-clip-text text-transparent leading-tight tracking-tight">
             Choose Verification Level
@@ -349,6 +358,10 @@ export default function FilterSelection({ onContinue }: FilterSelectionProps) {
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(30px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        .filter-selection-container.fade-out {
+          opacity: 0;
+          transform: translateY(-30px);
         }
       `}</style>
     </>
