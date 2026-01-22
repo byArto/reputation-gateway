@@ -1,6 +1,9 @@
 import { neon } from "@neondatabase/serverless"
 
-const sql = neon(process.env.POSTGRES_URL!)
+// Remove sslmode parameter from connection string for Neon compatibility
+const connectionString = process.env.POSTGRES_URL?.replace(/\?sslmode=require$/, '') || process.env.POSTGRES_URL!
+
+const sql = neon(connectionString)
 
 export { sql }
 
@@ -76,27 +79,29 @@ export async function updateProject(
   id: string,
   data: Partial<Omit<Project, "id" | "created_at">>
 ) {
-  // Build update object with only defined fields
-  const updates: { [key: string]: unknown } = {}
-
-  if (data.name !== undefined) updates.name = data.name
-  if (data.criteria !== undefined) updates.criteria = JSON.stringify(data.criteria)
-  if (data.manual_review !== undefined) updates.manual_review = data.manual_review
-  if (data.destination_url !== undefined) updates.destination_url = data.destination_url
-  if (data.destination_type !== undefined) updates.destination_type = data.destination_type
-
-  if (Object.keys(updates).length === 0) {
-    throw new Error("No fields to update")
+  // Fetch current project first
+  const current = await getProjectBySlug(id)
+  if (!current) {
+    throw new Error("Project not found")
   }
 
-  // Build SET clause dynamically
-  const setClauses = Object.keys(updates).map((key, idx) => `${key} = $${idx + 1}`).join(", ")
-  const values = Object.values(updates)
-  values.push(id)
+  // Merge updates with current data
+  const name = data.name ?? current.name
+  const criteria = data.criteria ? JSON.stringify(data.criteria) : JSON.stringify(current.criteria)
+  const manualReview = data.manual_review ?? current.manual_review
+  const destinationUrl = data.destination_url ?? current.destination_url
+  const destinationType = data.destination_type ?? current.destination_type
 
-  const query = `UPDATE projects SET ${setClauses} WHERE id = $${values.length} RETURNING *`
-
-  const result = await sql(query, values)
+  const result = await sql`
+    UPDATE projects
+    SET name = ${name},
+        criteria = ${criteria},
+        manual_review = ${manualReview},
+        destination_url = ${destinationUrl},
+        destination_type = ${destinationType}
+    WHERE id = ${id}
+    RETURNING *
+  `
   return result[0] as Project
 }
 
