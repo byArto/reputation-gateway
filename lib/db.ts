@@ -1,4 +1,6 @@
-import { sql } from "@vercel/postgres"
+import { neon } from "@neondatabase/serverless"
+
+const sql = neon(process.env.POSTGRES_URL!)
 
 export { sql }
 
@@ -53,61 +55,49 @@ export async function createProject(data: {
     VALUES (${data.name}, ${data.slug}, ${JSON.stringify(data.criteria)}, ${data.manualReview}, ${data.destinationUrl}, ${data.destinationType}, ${data.benefits || null})
     RETURNING *
   `
-  return result.rows[0] as Project
+  return result[0] as Project
 }
 
 export async function getProjectBySlug(slug: string) {
   const result = await sql`
     SELECT * FROM projects WHERE slug = ${slug} LIMIT 1
   `
-  return result.rows[0] as Project | undefined
+  return result[0] as Project | undefined
 }
 
 export async function getAllProjects() {
   const result = await sql`
     SELECT * FROM projects ORDER BY created_at DESC
   `
-  return result.rows as Project[]
+  return result as Project[]
 }
 
 export async function updateProject(
   id: string,
   data: Partial<Omit<Project, "id" | "created_at">>
 ) {
-  const updates: string[] = []
-  const values: unknown[] = []
-  let paramCount = 1
+  // Build update object with only defined fields
+  const updates: { [key: string]: unknown } = {}
 
-  if (data.name !== undefined) {
-    updates.push(`name = $${paramCount++}`)
-    values.push(data.name)
-  }
-  if (data.criteria !== undefined) {
-    updates.push(`criteria = $${paramCount++}`)
-    values.push(JSON.stringify(data.criteria))
-  }
-  if (data.manual_review !== undefined) {
-    updates.push(`manual_review = $${paramCount++}`)
-    values.push(data.manual_review)
-  }
-  if (data.destination_url !== undefined) {
-    updates.push(`destination_url = $${paramCount++}`)
-    values.push(data.destination_url)
-  }
-  if (data.destination_type !== undefined) {
-    updates.push(`destination_type = $${paramCount++}`)
-    values.push(data.destination_type)
-  }
+  if (data.name !== undefined) updates.name = data.name
+  if (data.criteria !== undefined) updates.criteria = JSON.stringify(data.criteria)
+  if (data.manual_review !== undefined) updates.manual_review = data.manual_review
+  if (data.destination_url !== undefined) updates.destination_url = data.destination_url
+  if (data.destination_type !== undefined) updates.destination_type = data.destination_type
 
-  if (updates.length === 0) {
+  if (Object.keys(updates).length === 0) {
     throw new Error("No fields to update")
   }
 
+  // Build SET clause dynamically
+  const setClauses = Object.keys(updates).map((key, idx) => `${key} = $${idx + 1}`).join(", ")
+  const values = Object.values(updates)
   values.push(id)
-  const query = `UPDATE projects SET ${updates.join(", ")} WHERE id = $${paramCount} RETURNING *`
 
-  const result = await sql.query(query, values)
-  return result.rows[0] as Project
+  const query = `UPDATE projects SET ${setClauses} WHERE id = $${values.length} RETURNING *`
+
+  const result = await sql(query, values)
+  return result[0] as Project
 }
 
 // Application queries
@@ -137,7 +127,7 @@ export async function createApplication(data: {
     )
     RETURNING *
   `
-  return result.rows[0] as Application
+  return result[0] as Application
 }
 
 export async function getApplicationsByProjectId(projectId: string) {
@@ -146,14 +136,14 @@ export async function getApplicationsByProjectId(projectId: string) {
     WHERE project_id = ${projectId}
     ORDER BY created_at DESC
   `
-  return result.rows as Application[]
+  return result as Application[]
 }
 
 export async function getApplicationById(id: string) {
   const result = await sql`
     SELECT * FROM applications WHERE id = ${id} LIMIT 1
   `
-  return result.rows[0] as Application | undefined
+  return result[0] as Application | undefined
 }
 
 export async function updateApplicationStatus(
@@ -167,7 +157,7 @@ export async function updateApplicationStatus(
     WHERE id = ${id}
     RETURNING *
   `
-  return result.rows[0] as Application
+  return result[0] as Application
 }
 
 export async function getApplicationStats(projectId: string) {
@@ -184,7 +174,7 @@ export async function getApplicationStats(projectId: string) {
     WHERE project_id = ${projectId}
   `
 
-  const stats = result.rows[0]
+  const stats = result[0]
   return {
     totalApplications: parseInt(stats.total_applications) || 0,
     last24h: parseInt(stats.last_24h) || 0,
@@ -206,5 +196,5 @@ export async function checkExistingApplication(
     ORDER BY created_at DESC
     LIMIT 1
   `
-  return result.rows[0] as Application | undefined
+  return result[0] as Application | undefined
 }
