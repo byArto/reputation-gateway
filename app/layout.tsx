@@ -16,7 +16,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Reputation Gateway",
+  title: "Trust Vault",
   description: "Filter beta testers by on-chain reputation",
 };
 

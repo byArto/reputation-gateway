@@ -950,7 +950,7 @@ export default function LandingHero() {
 
         {/* Features section */}
         <div className="features">
-          <h2 className="features-title">Why Choose Reputation Gateway?</h2>
+          <h2 className="features-title">Why Choose Trust Vault?</h2>
           <div className="features-grid">
             {features.map((feature, index) => (
               <div key={index} className="feature-card">
