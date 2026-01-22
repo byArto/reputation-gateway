@@ -1,9 +1,23 @@
 import { neon } from "@neondatabase/serverless"
 
-// Remove sslmode parameter from connection string for Neon compatibility
-const connectionString = process.env.POSTGRES_URL?.replace(/\?sslmode=require$/, '') || process.env.POSTGRES_URL!
+// Use POSTGRES_PRISMA_URL (no sslmode) or clean POSTGRES_URL from sslmode parameter
+const getConnectionString = () => {
+  // Prefer POSTGRES_PRISMA_URL as it doesn't have sslmode
+  if (process.env.POSTGRES_PRISMA_URL) {
+    return process.env.POSTGRES_PRISMA_URL
+  }
 
-const sql = neon(connectionString)
+  // Fallback to POSTGRES_URL, removing sslmode parameter
+  const url = process.env.POSTGRES_URL
+  if (!url) {
+    throw new Error("No database connection string found")
+  }
+
+  // Remove ?sslmode=require or &sslmode=require from URL
+  return url.replace(/[?&]sslmode=require(&|$)/, '$1').replace(/\?$/, '')
+}
+
+const sql = neon(getConnectionString())
 
 export { sql }
 
