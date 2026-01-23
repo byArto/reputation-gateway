@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation"
 import type { FilterPreset } from "@/lib/filters"
 import { getFilterPreset } from "@/lib/filters"
 
+// Get app domain from environment variable
+const APP_DOMAIN = process.env.NEXT_PUBLIC_APP_DOMAIN || "repgateway.xyz"
+
 interface FilterSettings {
   preset: FilterPreset
   customSettings?: {
@@ -254,7 +257,7 @@ export default function ConfigureForm({ filterSettings, onBack }: ConfigureFormP
               <label className="block text-[16px] font-[700] text-[#e0d5ff] mb-3">Page URL</label>
               <div className="flex gap-3 items-center">
                 <div className="px-5 py-4 bg-[#64748b]/20 border-2 border-[#64748b]/30 rounded-[14px] text-[#94a3b8] text-[16px] whitespace-nowrap">
-                  repgateway.xyz/
+                  {APP_DOMAIN}/
                 </div>
                 <input
                   type="text"

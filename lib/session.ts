@@ -1,9 +1,12 @@
 import { SignJWT, jwtVerify } from "jose"
 import { cookies } from "next/headers"
 
-const SECRET_KEY = new TextEncoder().encode(
-  process.env.SESSION_SECRET || "your-secret-key-change-this-in-production"
-)
+// Ensure SESSION_SECRET is set - no insecure fallback
+if (!process.env.SESSION_SECRET) {
+  throw new Error('SESSION_SECRET environment variable is required')
+}
+
+const SECRET_KEY = new TextEncoder().encode(process.env.SESSION_SECRET)
 
 const COOKIE_NAME = "ethos_session"
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7 // 7 days

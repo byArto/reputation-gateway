@@ -315,8 +315,12 @@ export function ethosUserToApplicationProfile(user: EthosUser) {
  * Get Ethos OAuth authorization URL
  */
 export function getEthosAuthUrl(redirectUri: string, state: string): string {
+  if (!process.env.ETHOS_CLIENT_ID) {
+    throw new Error('ETHOS_CLIENT_ID environment variable is required')
+  }
+
   const params = new URLSearchParams({
-    client_id: process.env.ETHOS_CLIENT_ID || "",
+    client_id: process.env.ETHOS_CLIENT_ID,
     redirect_uri: redirectUri,
     response_type: "code",
     scope: "profile",
@@ -333,6 +337,10 @@ export async function exchangeEthosCode(
   code: string,
   redirectUri: string
 ): Promise<{ profileId: number; accessToken: string } | null> {
+  if (!process.env.ETHOS_CLIENT_ID || !process.env.ETHOS_CLIENT_SECRET) {
+    throw new Error('ETHOS_CLIENT_ID and ETHOS_CLIENT_SECRET environment variables are required')
+  }
+
   try {
     const response = await fetch("https://ethos.network/oauth/token", {
       method: "POST",
